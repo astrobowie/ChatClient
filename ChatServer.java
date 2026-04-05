@@ -3,7 +3,7 @@ import java.net.*;
 import java.util.*;
 
 public class ChatServer extends Thread{
-    public static List<ChatUser> userList;
+    public static List<ChatUser> userList = Collections.synchronizedList(new LinkedList<ChatUser>());
 
     public static void main(String argv[]) throws Exception {
         
@@ -13,21 +13,26 @@ public class ChatServer extends Thread{
         //set up welcome socket
         ServerSocket welcome = new ServerSocket(port);
 
-        //start connection accepting loop
-
-            //accept new connection with welcome socket and then create a new user with it
+        //open first connection, use it to make first user
+        System.out.println("waiting for connection");
         Socket newConnectionOne = welcome.accept();
+        System.out.println("first connection made");
         userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
+        //start new thread for first connection
         ChatServer userThread = new ChatServer();
         userThread.start();
+        //accept second connection, add it to user list
         Socket newConnectionTwo = welcome.accept();
+        System.out.println("second connection made");
         userList.add(new ChatUser(newConnectionTwo, String.valueOf(userList.size()), "lobby"));
         
+        //get the message
         String messageTwo = userList.get(1).userInput.readUTF();
         for(int i = 0; i<userList.size(); i++){
             userList.get(i).outputToUser.writeBytes(messageTwo+'\n');
         }
         
+        //wait for other list
         userThread.join();
 
         for(int i = 0; i<userList.size(); i++){

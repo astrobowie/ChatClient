@@ -16,7 +16,7 @@ public class ChatClient extends Thread{
 
         ChatClient readingThread = new ChatClient();
         readingThread.start();
-
+        System.out.println("send message");
         String userMessage = userInput.readLine();
         userOutput.writeBytes(userMessage + '\n');
         System.out.println(userMessage);
@@ -30,7 +30,6 @@ public class ChatClient extends Thread{
     public void run(){
         
         String msg1, msg2;
-        
         try {  
             msg1 = serverOutput.readUTF();  
             System.out.println(msg1);
