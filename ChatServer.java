@@ -29,7 +29,7 @@ public class ChatServer extends Thread{
         userThread.start();
 
         //get the message
-        String messageTwo = userList.get(1).userInput.readUTF();
+        String messageTwo = userList.get(1).userInput.readLine();
         for(int i = 0; i<userList.size(); i++){
             userList.get(i).outputToUser.writeBytes(messageTwo+'\n');
         }
@@ -49,7 +49,7 @@ public class ChatServer extends Thread{
     public void run(){
         String messageOne;
         try{
-            messageOne = userList.get(0).userInput.readUTF();
+            messageOne = userList.get(0).userInput.readLine();
             for(int j = 0; j<userList.size(); j++){
                 userList.get(j).outputToUser.writeBytes(messageOne+'\n');
             }
