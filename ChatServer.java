@@ -18,14 +18,16 @@ public class ChatServer extends Thread{
         Socket newConnectionOne = welcome.accept();
         System.out.println("first connection made");
         userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
+        
+        //accept second connection, add it to user list
+        Socket newConnectionTwo = welcome.accept();
+        userList.add(new ChatUser(newConnectionTwo, String.valueOf(userList.size()), "lobby"));
+        System.out.println("second connection made");
+        
         //start new thread for first connection
         ChatServer userThread = new ChatServer();
         userThread.start();
-        //accept second connection, add it to user list
-        Socket newConnectionTwo = welcome.accept();
-        System.out.println("second connection made");
-        userList.add(new ChatUser(newConnectionTwo, String.valueOf(userList.size()), "lobby"));
-        
+
         //get the message
         String messageTwo = userList.get(1).userInput.readUTF();
         for(int i = 0; i<userList.size(); i++){
@@ -35,10 +37,12 @@ public class ChatServer extends Thread{
         //wait for other list
         userThread.join();
 
+        //close connections and return
         for(int i = 0; i<userList.size(); i++){
             userList.get(i).connectionSocket.close();
         }
         welcome.close();
+        return;
     }
 
     //thread for each user

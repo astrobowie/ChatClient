@@ -8,6 +8,7 @@ public class ChatClient extends Thread{
         String server = argv[0];
         int port = Integer.parseInt(argv[1]);
         
+        //create socket to communicate with server
         Socket connection = new Socket(server,port);
         //create reader for user input, path to output user input to server, and path for messages from server
         DataOutputStream userOutput = new DataOutputStream(connection.getOutputStream());
@@ -25,13 +26,15 @@ public class ChatClient extends Thread{
 
         connection.close();
 
+        System.out.println("connection closed");
+        return;
     }
 
     public void run(){
         
         String msg1, msg2;
         try {  
-            msg1 = serverOutput.readUTF();  
+            msg1 = serverOutput.readUTF();
             System.out.println(msg1);
         
             msg2 = serverOutput.readUTF();
