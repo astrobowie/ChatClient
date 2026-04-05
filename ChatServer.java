@@ -2,7 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-class ChatServer extends Thread{
+public class ChatServer extends Thread{
     public static void main(String argv[]) throws Exception {
         
         //get port from arguments
@@ -45,7 +45,7 @@ class ChatServer extends Thread{
     }
 }
 
-class ChatUser{
+public class ChatUser{
     public Socket connectionSocket;
     public DataInputStream userInput;
     public DataOutputStream outputToUser;
