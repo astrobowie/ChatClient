@@ -30,14 +30,15 @@ public class ChatClient extends Thread{
     public void run(){
         
         String msg1, msg2;
-        try {
+        
+        try {  
             msg1 = serverOutput.readUTF();  
             System.out.println(msg1);
         
             msg2 = serverOutput.readUTF();
             System.out.println(msg2);
         } catch (IOException e) {
-            System.err.println("ioexception");
+            e.printStackTrace();
         } 
     }
 }

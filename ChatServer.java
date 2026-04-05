@@ -45,10 +45,8 @@ public class ChatServer extends Thread{
                 userList.get(j).outputToUser.writeBytes(messageOne+'\n');
             }
         } catch (IOException e){
-            System.err.println("io fail");
+            e.printStackTrace();
         }
-        
-        
     }
 }
 
