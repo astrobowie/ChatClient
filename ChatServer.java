@@ -3,6 +3,8 @@ import java.net.*;
 import java.util.*;
 
 public class ChatServer extends Thread{
+    public static List<ChatUser> userList;
+
     public static void main(String argv[]) throws Exception {
         
         //get port from arguments
@@ -11,61 +13,46 @@ public class ChatServer extends Thread{
         //set up welcome socket
         ServerSocket welcome = new ServerSocket(port);
 
-        
-        //set up list of users
-        List users = Collections.synchronizedList(new LinkedList<ChatUser>());
         //start connection accepting loop
 
             //accept new connection with welcome socket and then create a new user with it
         Socket newConnectionOne = welcome.accept();
-        users.add(ChatUser(newConnectionOne, String.valueOf(users.size())), "lobby");
+        userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
         ChatServer userThread = new ChatServer();
         userThread.start();
         Socket newConnectionTwo = welcome.accept();
-        users.add(ChatUser(newConnectionOne, String.valueOf(users.size())), "lobby");
+        userList.add(new ChatUser(newConnectionTwo, String.valueOf(userList.size()), "lobby"));
         
-        String messageTwo = messageTwo.copyValueOf(users.get(1).userInput.readUTF());
-        for(int i = 0; i<users.size(); i++){
-            users.get(i).outputToUser.writeBytes(messageTwo+'\n');
+        String messageTwo = userList.get(1).userInput.readUTF();
+        for(int i = 0; i<userList.size(); i++){
+            userList.get(i).outputToUser.writeBytes(messageTwo+'\n');
         }
         
         userThread.join();
 
-        for(int i = 0; i<users.size(); i++){
-            users.get(i).connectionSocket.close;
+        for(int i = 0; i<userList.size(); i++){
+            userList.get(i).connectionSocket.close();
         }
+        welcome.close();
     }
 
     //thread for each user
     public void run(){
-        String messageOne = messageOne.copyValueOf(users.get(0).userInput.readUTF());
-        for(int j = 0; j<users.size(); j++){
-            users.get(j).outputToUser.writeBytes(messageOne+'/n');
+        String messageOne;
+        try{
+            messageOne = userList.get(0).userInput.readUTF();
+            for(int j = 0; j<userList.size(); j++){
+                userList.get(j).outputToUser.writeBytes(messageOne+'\n');
+            }
+        } catch (IOException e){
+            System.err.println("io fail");
         }
+        
+        
     }
 }
 
-public class ChatUser{
-    public Socket connectionSocket;
-    public DataInputStream userInput;
-    public DataOutputStream outputToUser;
-    public String nickname;
-    public String room = "lobby";
 
-    /*@Override
-    boolean equals(ChatUser user){
-        if()
-    }*/
-
-    public ChatUser(Socket connection, String name, String room){
-        this.connectionSocket = connection;
-        this.userInput = new DataInputStream(connection.getInputStream());
-        this.outputToUser = new DataOutputStream(connection.getOutputStream());
-        this.nickname = name;
-        this.room = room;
-    }
-
-}
 
 /* public class SocketThread implements Runnable {
     private int socketNum;
