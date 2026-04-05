@@ -12,7 +12,7 @@ public class ChatClient extends Thread{
         //create reader for user input, path to output user input to server, and path for messages from server
         DataOutputStream userOutput = new DataOutputStream(connection.getOutputStream());
         BufferedReader userInput = new BufferedReader (new InputStreamReader(System.in));
-        DataInputStream serverOutput = new DataInputStream(connection.getInputStream());
+        public DataInputStream serverOutput = new DataInputStream(connection.getInputStream());
 
         ChatClient readingThread = new ChatClient();
         readingThread.start();
