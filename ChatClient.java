@@ -2,7 +2,7 @@ import java.io.*;
 import java.net.*;
 
 public class ChatClient extends Thread{
-    public static DataInputStream serverOutput;
+    public static BufferedReader serverOutput;
     public static void main(String argv[]) throws Exception {
         //parse arguments to variables
         String server = argv[0];
@@ -13,7 +13,7 @@ public class ChatClient extends Thread{
         //create reader for user input, path to output user input to server, and path for messages from server
         DataOutputStream userOutput = new DataOutputStream(connection.getOutputStream());
         BufferedReader userInput = new BufferedReader (new InputStreamReader(System.in));
-        serverOutput = new DataInputStream(connection.getInputStream());
+        serverOutput = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
         ChatClient readingThread = new ChatClient();
         readingThread.start();
@@ -25,6 +25,7 @@ public class ChatClient extends Thread{
         readingThread.join();
 
         connection.close();
+        serverOutput.close();
 
         System.out.println("connection closed");
         return;
@@ -34,10 +35,10 @@ public class ChatClient extends Thread{
         
         String msg1, msg2;
         try {  
-            msg1 = serverOutput.readUTF();
+            msg1 = serverOutput.readLine();
             System.out.println(msg1);
         
-            msg2 = serverOutput.readUTF();
+            msg2 = serverOutput.readLine();
             System.out.println(msg2);
         } catch (IOException e) {
             e.printStackTrace();

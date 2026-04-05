@@ -50,9 +50,8 @@ public class ChatServer extends Thread{
         String messageOne;
         try{
             messageOne = userList.get(0).userInput.readLine();
-            for(int j = 0; j<userList.size(); j++){
-                userList.get(j).outputToUser.writeBytes(messageOne+'\n');
-            }
+            userList.get(0).outputToUser.writeBytes(messageOne+'\n');
+            userList.get(1).outputToUser.writeBytes(messageOne+'\n');
         } catch (IOException e){
             e.printStackTrace();
         }
