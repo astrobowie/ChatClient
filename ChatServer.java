@@ -35,10 +35,14 @@ public class ChatServer{
         //set up welcome socket
         ServerSocket welcome = new ServerSocket(port);
 
+        //welcome new connections forever
         while(true){
             Socket newConnectionOne = welcome.accept();
-            SocketThread newUser = new SocketThread(userList.size()-1);
+            //make new thread to handle new user connection messages
+            SocketThread newUser = new SocketThread(userList.size());
             System.out.println("new connection made");
+
+            //add new user to list and start new thread
             userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
             newUser.start();
         }
