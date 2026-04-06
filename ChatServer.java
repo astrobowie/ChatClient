@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class ChatServer{
@@ -16,7 +15,6 @@ public class ChatServer{
         } 
 
         public void run(){
-            String msg;
             while(true){
                 //listen for messages from user, send them to all other users, watch out for io errors, do this forever
                 try {
@@ -26,10 +24,10 @@ public class ChatServer{
                     byte[] messageBytes = new byte[n];
                     //write rest of message to array, convert array to string
                     userList.get(this.index).userInput.read(messageBytes, 0, n);
-                    msg = new String(messageBytes, StandardCharsets.UTF_8);
                     //output messages
                     for (int i = 0; i<userList.size(); i++) {
-                        userList.get(i).outputToUser.writeBytes(msg+'\n');
+                        userList.get(i).outputToUser.writeInt(n);
+                        userList.get(i).outputToUser.write(messageBytes, 0, n);
                     }
                 } catch (IOException e){
                     e.printStackTrace();
