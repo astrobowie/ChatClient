@@ -20,7 +20,6 @@ public class ChatClient extends Thread{
         System.out.println("send message");
         String userMessage = userInput.readLine();
         userOutput.writeBytes(userMessage + '\n');
-        System.out.println("SENT:" + userMessage);
         
         readingThread.join();
 
