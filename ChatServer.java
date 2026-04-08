@@ -193,7 +193,7 @@ public class ChatServer{
                             payload = "Error: Username already registered";
                         } else {
                             //otherwise, set the new nickname
-                            userList.get(this.index).nickname = msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:"));
+                            userList.get(this.index).nickname = msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",timestamp:"));
                             System.out.println("Registered");
                             //then send ok message
                             msg = "type:ok,message:registered,room:lobby,timestamp:" + date;
