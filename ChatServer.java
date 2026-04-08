@@ -187,13 +187,13 @@ public class ChatServer{
                         break;
                     case "register":
                         //if the type is a register ping, check to see if the new nickname is already in the list
-                        if(userList.contains(new ChatUser(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",timestamp:"))))){
+                        if(userList.contains(new ChatUser(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:"))))){
                             //if it is, return an error message
                             type = "error";
                             payload = "Error: Username already registered";
                         } else {
                             //otherwise, set the new nickname
-                            userList.get(this.index).nickname = msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",timestamp:"));
+                            userList.get(this.index).nickname = msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:"));
                             System.out.println("Registered");
                             //then send ok message
                             msg = "type:ok,message:registered,room:lobby,timestamp:" + date;

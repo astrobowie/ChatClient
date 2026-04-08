@@ -40,7 +40,7 @@ public class ChatClient extends Thread{
 
         //send register message
         timeKeeper = LocalDateTime.now();
-        userMessage = "type:register,nickname:" + nickname + ",clientID:" + userID + ",timestamp:" + timeKeeper.format(timeFormat);
+        userMessage = "type:register,nickname:" + nickname + ",userID:" + userID + ",timestamp:" + timeKeeper.format(timeFormat);
         userOutput.writeInt(userMessage.getBytes().length);
         userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
 
