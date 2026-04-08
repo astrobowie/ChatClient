@@ -23,6 +23,7 @@ public class ChatServer{
     //new type of thread that handles timer management
     private static class HeartbeatThread extends Thread{
         public void run(){
+            System.out.println("win");
             //declare system message variable to be used if a timer fails
             String sysmsg;
             while(true){
