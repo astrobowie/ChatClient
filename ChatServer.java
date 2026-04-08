@@ -92,7 +92,7 @@ public class ChatServer{
                                         break;
                                     }
                                     //get person user is trying to dm
-                                    String dmTarget = msg.substring(5,msg.indexOf(' ',5));
+                                    String dmTarget = payload.substring(5,payload.indexOf(' ',5));
                                     //check if user is real
                                     if(userList.contains(dmTarget)){
                                         //replace message with pm metadata and payload
@@ -136,7 +136,15 @@ public class ChatServer{
                                         payload = "Error: Username already registered";
                                     } else {
                                         //if it isnt, update the nickname
-                                        userList.get(index).nickname = payload.substring(payload.indexOf(' '));
+                                        userList.get(this.index).nickname = payload.substring(payload.indexOf(' '));
+                                        msg = "type:system,message:nick " + userList.get(this.index).nickname + ",timestamp:" + date;
+                                        try {
+                                            userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
+                                            userList.get(this.index).outputToUser.write(msg.getBytes(), 0, msg.getBytes().length);
+                                        } catch (IOException e){
+                                            e.printStackTrace();
+                                            break;
+                                        }
                                     }
                                     break;
                                 default:
@@ -228,6 +236,7 @@ public class ChatServer{
         }//end run method
     }//end private subclass
 
+    @SuppressWarnings("resource")
     public static void main(String argv[]) throws Exception {
         
         //get port from arguments

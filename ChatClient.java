@@ -41,6 +41,8 @@ public class ChatClient extends Thread{
         //send register message
         timeKeeper = LocalDateTime.now();
         userMessage = "type:register,nickname:" + nickname + ",clientID:" + userID + ",timestamp:" + timeKeeper.format(timeFormat);
+        userOutput.writeInt(userMessage.getBytes().length);
+        userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
 
         //accept new messages forever
         while(!leave){
@@ -116,7 +118,7 @@ public class ChatClient extends Thread{
                     //the server can just relay the message directly from other chat clients
                     case "text":
                         //append the room name and the sender to the payload, then append the actual message
-                        payload += "[" + msg1.substring(msg1.indexOf(",room:")+6,msg1.lastIndexOf(",nickname:")) + "] " + msg1.substring(msg1.indexOf(",nickname:")+10,msg1.lastIndexOf(",userID")) + ":" + msg1.substring(msg1.indexOf(",text:")+6, msg1.lastIndexOf(",timestamp:"));
+                        payload += "[" + msg1.substring(msg1.indexOf(",room:")+6,msg1.lastIndexOf(",nickname:")) + "] " + msg1.substring(msg1.indexOf(",nickname:")+10,msg1.lastIndexOf(",userID")) + ": " + msg1.substring(msg1.indexOf(",text:")+6, msg1.lastIndexOf(",timestamp:"));
                         break;
                     case "pm":
                         //i probably could have processed the pm message indicator here instead of on the server side in retrospect
@@ -125,7 +127,12 @@ public class ChatClient extends Thread{
                         payload += msg1.substring(msg1.indexOf(",text:")+6, msg1.lastIndexOf(",timestamp:"));
                         break;
                     case "system":
-                        System.out.println("system");
+                        //if system confirms nickname change with message starting in nick, change local nickname variable to rest of message
+                        if(msg1.substring(msg1.indexOf(",message:")+9,msg1.indexOf(",message:")+9+4).equals("nick")){
+                            nickname = msg1.substring(msg1.indexOf(",message:")+9+4,msg1.lastIndexOf(",timestamp:"));
+                        } else {
+                            payload += msg1.substring(msg1.indexOf(",message:")+9,msg1.lastIndexOf(",timestamp:"));
+                        }
                         break;
                     case "history":
                         System.out.println("History");
