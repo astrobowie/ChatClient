@@ -78,7 +78,9 @@ public class ChatClient extends Thread{
                 msg1 = new String(messageBytes, StandardCharsets.UTF_8);
                 //output to user
             } catch (IOException e) {
+                //print exception and then exit loop so that the thread doesnt nuke my terminal with error messages
                 e.printStackTrace();
+                leave = true;
             } 
             //if the message got read properly, we gotta spend forever parsing it
             if(msg1.equals("error")!=true){
@@ -107,7 +109,7 @@ public class ChatClient extends Thread{
                     //the server can just relay the message directly from other chat clients
                     case "text":
                         //append the room name and the sender to the payload, then append the actual message
-                        payload += "[" + msg1.substring(msg1.indexOf(",room:"+6),msg1.lastIndexOf(",nickname:")) + "] " + msg1.substring(msg1.indexOf(",nickname:")+10,msg1.lastIndexOf(",userID")) + ":" + msg1.substring(msg1.indexOf(",text:")+6, msg1.lastIndexOf(",timestamp:"));
+                        payload += "[" + msg1.substring(msg1.indexOf(",room:")+6,msg1.lastIndexOf(",nickname:")) + "] " + msg1.substring(msg1.indexOf(",nickname:")+10,msg1.lastIndexOf(",userID")) + ":" + msg1.substring(msg1.indexOf(",text:")+6, msg1.lastIndexOf(",timestamp:"));
                         break;
                     case "pm":
                         //i probably could have processed the pm message indicator here instead of on the server side in retrospect
