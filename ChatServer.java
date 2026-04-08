@@ -130,7 +130,7 @@ public class ChatServer{
                                         break;
                                     }
                                     //in the case of the nick command, check if the given nickname is already in the list
-                                    if(userList.contains(payload.substring(payload.indexOf(' ')))){
+                                    if(userList.contains(new ChatUser(payload.substring(payload.indexOf(' '))))){
                                         //return an error message if it is
                                         type = "error";
                                         payload = "Error: Username already registered";
