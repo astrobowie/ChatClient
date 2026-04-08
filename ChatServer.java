@@ -136,8 +136,8 @@ public class ChatServer{
                                         payload = "Error: Username already registered";
                                     } else {
                                         //if it isnt, update the nickname
-                                        userList.get(this.index).nickname = payload.substring(payload.indexOf(' '));
-                                        msg = "type:system,message:nick " + userList.get(this.index).nickname + ",timestamp:" + date;
+                                        userList.get(this.index).nickname = payload.substring(payload.indexOf(' ')+1,payload.length()-1);
+                                        msg = "type:system,message:nick" + userList.get(this.index).nickname + ",timestamp:" + date;
                                         try {
                                             userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
                                             userList.get(this.index).outputToUser.write(msg.getBytes(), 0, msg.getBytes().length);
