@@ -23,7 +23,6 @@ public class ChatServer{
     //new type of thread that handles timer management
     private static class HeartbeatThread extends Thread{
         public void run(){
-            System.out.println("win");
             //declare system message variable to be used if a timer fails
             String sysmsg;
             while(true){
@@ -239,6 +238,7 @@ public class ChatServer{
                         //if the type is a register ping, check to see if the new nickname is already in the list
                         if(userList.contains(new ChatUser(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:"))))){
                             //if it is, return an error message
+                            userNum--;
                             type = "error";
                             payload = "Error: Username already registered";
                             userList.get(this.index).nickname = "";
@@ -256,7 +256,7 @@ public class ChatServer{
                                 e.printStackTrace();
                             }
                             //increase actual user count
-                            userNum++;
+                            
                         }
                         break;
                     default:
@@ -312,11 +312,10 @@ public class ChatServer{
                 userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
                 newUser = new SocketThread(userList.size());
             }
-            
+            userNum++;
             System.out.println("new connection made");
 
             //add new user to list and start new thread
-            userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
             newUser.start();
         } // end while loop
     } //end main
