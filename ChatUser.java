@@ -33,6 +33,8 @@ public class ChatUser{
                 return true;
             } else {
                 System.out.println(1);
+                System.out.println(compared.nickname);
+                System.out.println(this.nickname);
                 return false;
             }
         } else { // end chat user check
