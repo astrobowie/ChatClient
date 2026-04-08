@@ -21,7 +21,7 @@ public class ChatClient extends Thread{
         userID = argv[3];
         
         //date and time stuff
-        LocalDateTime timeKeeper = LocalDateTime.now();
+        LocalDateTime timeKeeper;
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         //create socket to communicate with server
@@ -35,19 +35,25 @@ public class ChatClient extends Thread{
         ChatClient readingThread = new ChatClient();
         readingThread.start();
 
-        //declare message variable to store message to be sent, size variable to store size of packagte
+        //declare message variable to store message to be sent, size variable to store size of package
         String userMessage;
+
+        //send register message
+        timeKeeper = LocalDateTime.now();
+        userMessage = "type:register,nickname:" + nickname + ",clientID:" + userID + ",timestamp:" + timeKeeper.format(timeFormat);
+
         //accept new messages forever
         while(!leave){
             //get user message
-            System.out.println("send message");
             userMessage = userInput.readLine();
             //checks if user message is a disconnect, send disconnect message instead
-            if(userMessage.length()>0&&userMessage.substring(0,10).equals("/disconnect")){
+            //also get current datetime
+            timeKeeper = LocalDateTime.now();
+            if(userMessage.length()>=11&&userMessage.substring(0,11).equals("/disconnect")){
                 userMessage = "type:disconnect,nickname:" + nickname + ",userID:" + userID + ",timestamp:"+ timeKeeper.format(timeFormat);
                 leave = true;
             } else {
-                //otherwise, add metadata to user message
+                //otherwise, add metadata to user message and send it
                 userMessage = "type:text,room:lobby,nickname:" + nickname + ",userID:" + userID + ",text:" + userMessage + ",timestamp:" + timeKeeper.format(timeFormat);
             }
             //send message as length in bytes and then a series of bytes
@@ -81,6 +87,7 @@ public class ChatClient extends Thread{
                 //print exception and then exit loop so that the thread doesnt nuke my terminal with error messages
                 e.printStackTrace();
                 leave = true;
+                break;
             } 
             //if the message got read properly, we gotta spend forever parsing it
             if(msg1.equals("error")!=true){

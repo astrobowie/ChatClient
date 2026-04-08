@@ -6,6 +6,14 @@ public class ChatServer{
     //list of users is a public static variable so that it can be accessed inside threads
     public static List<ChatUser> userList = Collections.synchronizedList(new ArrayList<ChatUser>());
 
+    //method to parse number of commands so i don't have to
+    //actually while i was writing this it occurred to me that i probably could have used split to make parsing a lot of this easier
+    //and more readable for that matter
+    //but im not going to lie to you i'm really proud that all this string manipulation worked as well as it did first try
+    //also im still a little gunshy about running out of heap space since i ran into that error a while back. so. yknow.
+    public static int numArgs(String command){
+        return command.split(" ").length;
+    } 
     //new type of thread that takes an int so that it knows which user to listen for
     private static class SocketThread extends Thread {
         int index;
@@ -60,15 +68,29 @@ public class ChatServer{
                     //if the message is text, get the payload
                     case "text":
                         //uses "lastindexof" for timestamp so that the phrase ",timestamp:" in a message won't beef the whole program
-                        payload = msg.substring(msg.indexOf(",text:")+6, msg.lastIndexOf(",timestamp:"));
+                        //also adds an extra line of white space so that the upcoming switch case doesn't brick itself on single argument commands
+                        //that's not an ellegant solution but the alternative was throwing a ternary operator into the switch case statement
+                        //which i think would put me on a list somewhere
+                        payload = msg.substring(msg.indexOf(",text:")+6, msg.lastIndexOf(",timestamp:")) + " ";
                         //check if the message is a command
                         if(payload.charAt(0)=='/'){
                             //if it is a command, do different stuff depending on the command
                             switch (payload.substring(1, payload.indexOf(' '))){
                                 case "join":
+                                    if(numArgs(payload)<2){
+                                        type="error";
+                                        payload = "Error: Invalid arguments!";
+                                        break;
+                                    }
                                     System.out.println("join");
                                     break;
                                 case "msg":
+                                    //check if arguments are legal
+                                    if(numArgs(payload)<3){ //<-- this line has a heart in it! yay
+                                        type="error";
+                                        payload = "Error: Invalid arguments!";
+                                        break;
+                                    }
                                     //get person user is trying to dm
                                     String dmTarget = msg.substring(5,msg.indexOf(' ',5));
                                     //check if user is real
@@ -102,6 +124,11 @@ public class ChatServer{
                                     System.out.println("who");
                                     break;
                                 case "nick":
+                                    if(numArgs(payload)<2){
+                                        type="error";
+                                        payload = "Error: Invalid arguments!";
+                                        break;
+                                    }
                                     //in the case of the nick command, check if the given nickname is already in the list
                                     if(userList.contains(payload.substring(payload.indexOf(' ')))){
                                         //return an error message if it is
