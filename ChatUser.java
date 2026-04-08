@@ -32,6 +32,7 @@ public class ChatUser{
             if(compared.nickname.equals(this.nickname)){
                 return true;
             } else {
+                System.out.println(1);
                 return false;
             }
         } else { // end chat user check
@@ -44,10 +45,12 @@ public class ChatUser{
                 if(compared.equals(this.nickname)){
                     return true;
                 } else {
+                    System.out.println(2);
                     return false;
                 }
             } else { //end string check
                 //return false if it isn't a chat user or a string
+                System.out.println(3);
                 return false;
             } //end if
         }// end else

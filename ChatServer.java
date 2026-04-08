@@ -187,7 +187,7 @@ public class ChatServer{
                         break;
                     case "register":
                         //if the type is a register ping, check to see if the new nickname is already in the list
-                        if(userList.contains(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",timestamp:")))){
+                        if(userList.contains(new ChatUser(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",timestamp:"))))){
                             //if it is, return an error message
                             type = "error";
                             payload = "Error: Username already registered";
@@ -243,7 +243,7 @@ public class ChatServer{
             Socket newConnectionOne = welcome.accept();
             SocketThread newUser;
             //check if existing ChatUser object can be repurposed
-            if(userList.contains("nullUser")){
+            if(userList.contains(new ChatUser("nullUser"))){
                 //if so, make a new thread and repurpose the old userList spot
                 newUser = new SocketThread(userList.indexOf("nullUser"));
                 userList.get(userList.indexOf("nullUser")).reUseUser(newConnectionOne, String.valueOf(userList.size()), "lobby");
