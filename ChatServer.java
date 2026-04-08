@@ -304,15 +304,17 @@ public class ChatServer{
             //check if existing ChatUser object can be repurposed
             if(userList.contains(new ChatUser(""))){
                 //if so, make a new thread and repurpose the old userList spot
+                userNum++;
                 newUser = new SocketThread(userList.indexOf(new ChatUser("")));
                 userList.get(userList.indexOf(new ChatUser(""))).reUseUser(newConnectionOne, String.valueOf(userList.size()), "lobby");
                 
             } else {
                 //if not, add a new user and then start a brand new thread
+                userNum++;
                 userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
                 newUser = new SocketThread(userList.size());
             }
-            userNum++;
+            
             System.out.println("new connection made");
 
             //add new user to list and start new thread
