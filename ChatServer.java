@@ -312,7 +312,7 @@ public class ChatServer{
                 //if not, add a new user and then start a brand new thread
                 userNum++;
                 userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
-                newUser = new SocketThread(userList.size());
+                newUser = new SocketThread(userList.size()-1);
             }
             
             System.out.println("new connection made");
