@@ -19,6 +19,7 @@ public class ChatUser{
     //equals override
     @Override
     public boolean equals(Object user){
+        System.out.println("astro sweep");
         //i wanted this to check based on a chatuser or a string so i can use it for direct messages
         //                       and checking duplicate nicknames with ArrayList's contains() method
         //turns out it doesnt work like that for contains
