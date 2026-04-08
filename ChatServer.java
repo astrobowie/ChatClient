@@ -176,11 +176,11 @@ public class ChatServer{
                         System.out.println("Ping");
                         break;
                     case "disconnect":
-                        //on disconnect message, close the socket and remove the user
+                        //on disconnect message, close the socket and mark userlist slot for reuse
                         System.out.println("disconnect");
                         try{
                             userList.get(index).connectionSocket.close();
-                            userList.remove(index);
+                            userList.get(index).nickname = "nullUser";
                         } catch (IOException e){
                             e.printStackTrace();
                         }
@@ -226,16 +226,10 @@ public class ChatServer{
                     break;
                 }
             }//end while loop
-            //close connection if loop exited
-            try {
-                userList.get(this.index).connectionSocket.close();
-            } catch (IOException e){
-                e.printStackTrace();
-            }
         }//end run method
     }//end private subclass
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings({ "resource", "unlikely-arg-type" })
     public static void main(String argv[]) throws Exception {
         
         //get port from arguments
@@ -247,8 +241,19 @@ public class ChatServer{
         //welcome new connections forever
         while(true){
             Socket newConnectionOne = welcome.accept();
-            //make new thread to handle new user connection messages
-            SocketThread newUser = new SocketThread(userList.size());
+            SocketThread newUser;
+            //check if existing ChatUser object can be repurposed
+            if(userList.contains("nullUser")){
+                //if so, make a new thread and repurpose the old userList spot
+                newUser = new SocketThread(userList.indexOf("nullUser"));
+                userList.get(userList.indexOf("nullUser")).reUseUser(newConnectionOne, String.valueOf(userList.size()), "lobby");
+                
+            } else {
+                //if not, add a new user and then start a brand new thread
+                userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
+                newUser = new SocketThread(userList.size());
+            }
+            
             System.out.println("new connection made");
 
             //add new user to list and start new thread

@@ -34,6 +34,7 @@ public class ChatUser{
         } else { // end chat user check
             //start string check
             if (user instanceof String) {
+                System.out.println("working string check");
                 //second verse, same as the first
                 //make a variable to return the user argument as a string
                 String compared = (String) user;
@@ -81,6 +82,14 @@ public class ChatUser{
     //it takes strings and a connection and then it makes the variables equal to those
     //youre a smart cookie you can figure it out
     public ChatUser(Socket connection, String name, String room) throws IOException{
+        this.connectionSocket = connection;
+        this.userInput = new DataInputStream(this.connectionSocket.getInputStream());
+        this.outputToUser = new DataOutputStream(this.connectionSocket.getOutputStream());
+        this.nickname = name;
+        this.room = room;
+    }
+
+    public void reUseUser(Socket connection, String name, String room) throws IOException{
         this.connectionSocket = connection;
         this.userInput = new DataInputStream(this.connectionSocket.getInputStream());
         this.outputToUser = new DataOutputStream(this.connectionSocket.getOutputStream());
