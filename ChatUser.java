@@ -19,9 +19,11 @@ public class ChatUser{
     //equals override
     @Override
     public boolean equals(Object user){
-        //i want this to check based on a chatuser or a string so i can use it for direct messages
-        //                     and checking duplicate nicknames with ArrayList's contains() method
-        //so we start by checking if the object compared is a chatuser
+        //i wanted this to check based on a chatuser or a string so i can use it for direct messages
+        //                       and checking duplicate nicknames with ArrayList's contains() method
+        //turns out it doesnt work like that for contains
+        //but it does work like that for stuff like "indexOf" so this is still useful
+        //anyway we start by checking if the object compared is a chatuser
         if(user instanceof ChatUser){
             //create variable compared equal to user if it was a chat user
             ChatUser compared = (ChatUser) user;
@@ -34,7 +36,6 @@ public class ChatUser{
         } else { // end chat user check
             //start string check
             if (user instanceof String) {
-                System.out.println("working string check");
                 //second verse, same as the first
                 //make a variable to return the user argument as a string
                 String compared = (String) user;
@@ -47,9 +48,9 @@ public class ChatUser{
             } else { //end string check
                 //return false if it isn't a chat user or a string
                 return false;
-            }
-        }
-    }
+            } //end if
+        }// end else
+    }// end equals
 
     //so there are like, timer variables and stuff in java.util, but they all use threading
     //and im already using a *lot* of threading, to the point im a bit worried about memory usage
@@ -87,6 +88,14 @@ public class ChatUser{
         this.outputToUser = new DataOutputStream(this.connectionSocket.getOutputStream());
         this.nickname = name;
         this.room = room;
+    }
+    //overloaded constructor to very quickly get around the fact that contains doesn't work like i thought it did
+    public ChatUser(String name){
+        this.connectionSocket = null;
+        this.userInput = null;
+        this.outputToUser = null;
+        this.nickname = name;
+        this.room = null;
     }
 
     public void reUseUser(Socket connection, String name, String room) throws IOException{

@@ -57,11 +57,11 @@ public class ChatClient extends Thread{
             } else {
                 //otherwise, add metadata to user message and send it
                 userMessage = "type:text,room:lobby,nickname:" + nickname + ",userID:" + userID + ",text:" + userMessage + ",timestamp:" + timeKeeper.format(timeFormat);
-            }
+            } // end if else
             //send message as length in bytes and then a series of bytes
             userOutput.writeInt(userMessage.getBytes().length);
             userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
-        }
+        }//end while loop
         //on disconnect, close connection
         System.out.println("Disconnect Successful");
         connection.close();
