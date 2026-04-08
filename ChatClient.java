@@ -16,6 +16,7 @@ public class ChatClient extends Thread{
     public static long lastPing = System.currentTimeMillis();
     public static int pulseTimer=0;
     public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static Object lock = new Object();
     
     public static void pingSent(){
         lastPing = System.currentTimeMillis();
@@ -25,7 +26,7 @@ public class ChatClient extends Thread{
     //thread to handle heartbeat pings to server
     private static class pingThread extends Thread{
         public void run(){
-            //declare time variable
+            //declare time variable and string to hold message
             long currTime;
             String pingMsg;
             while(!leave){
@@ -34,11 +35,13 @@ public class ChatClient extends Thread{
                 lastPing = currTime;
                 if(pulseTimer>10000){
                     pingMsg = "type:ping,nickname:"+ nickname +",userID:" + userID + ",timestamp:" + LocalDateTime.now().format(timeFormat);
-                    try {
-                        userOutput.writeInt(pingMsg.getBytes().length);
-                        userOutput.write(pingMsg.getBytes());
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    synchronized (lock){
+                        try {
+                            userOutput.writeInt(pingMsg.getBytes().length);
+                            userOutput.write(pingMsg.getBytes());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                     lastPing = 0;
                 }
@@ -74,8 +77,11 @@ public class ChatClient extends Thread{
         //send register message
         timeKeeper = LocalDateTime.now();
         userMessage = "type:register,nickname:" + nickname + ",userID:" + userID + ",timestamp:" + timeKeeper.format(timeFormat);
-        userOutput.writeInt(userMessage.getBytes().length);
-        userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
+        synchronized (lock) {
+            userOutput.writeInt(userMessage.getBytes().length);
+            userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
+        }
+        
 
         //set up heartbeat thread
         pingThread heartbeat = new pingThread();
@@ -96,8 +102,11 @@ public class ChatClient extends Thread{
                 userMessage = "type:text,room:lobby,nickname:" + nickname + ",userID:" + userID + ",text:" + userMessage + ",timestamp:" + timeKeeper.format(timeFormat);
             } // end if else
             //send message as length in bytes and then a series of bytes
-            userOutput.writeInt(userMessage.getBytes().length);
-            userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
+            synchronized(lock){
+                userOutput.writeInt(userMessage.getBytes().length);
+                userOutput.write(userMessage.getBytes());
+            }
+            
             //tell the heartbeat timer that a message has been sent
             pingSent();
         }//end while loop

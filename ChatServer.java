@@ -31,8 +31,9 @@ public class ChatServer{
                     //if the user is valid, run the timer update. since the timer update returns the time since the last ping, 
                     //                                                 if it returns greater than 30,000, disconnect the user
                     if(userList.get(i).nickname.equals("")!=true&&userList.get(i).timerUpdate()>30000){
+                        System.out.println(userList.get(i).nickname + " disconnect");
                         //create the system messge
-                        sysmsg = "type:system,message:" + userList.get(i).nickname + ": discconnected.,timestamp:" + LocalDateTime.now().format(timeFormat);
+                        sysmsg = "type:system,message:" + userList.get(i).nickname + ": disconnected.,timestamp:" + LocalDateTime.now().format(timeFormat);
                         try{
                             //for every single user that isn't the timed out user, if the user is valid, output a system message for the disconnect
                             for(int j = 0; j<userList.size(); j++){
