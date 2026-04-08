@@ -29,7 +29,7 @@ public class ChatUser{
             //create variable compared equal to user if it was a chat user
             ChatUser compared = (ChatUser) user;
             //check if the user's nickname is equal, if it is, return true, otherwise return false
-            if(compared.nickname.compareTo(this.nickname)==0){
+            if(compared.nickname.trim().compareTo(this.nickname.trim())==0){
                 return true;
             } else {
                 System.out.println(1);

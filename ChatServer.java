@@ -96,7 +96,7 @@ public class ChatServer{
                                     //check if user is real
                                     if(userList.contains(new ChatUser(dmTarget))){
                                         //replace message with pm metadata and payload
-                                        msg = "type:pm,from:" + dmTarget + ",text:[PM from " + dmTarget +"] " + payload.substring(payload.indexOf(dmTarget)+dmTarget.length()) + "timestamp:" + date;
+                                        msg = "type:pm,from:" + dmTarget + ",text:[PM from " + dmTarget +"] " + payload.substring(payload.indexOf(dmTarget)+dmTarget.length()) + ",timestamp:" + date;
                                         //get new message size
                                         int pmSize = msg.getBytes().length;
                                         try{                                        
