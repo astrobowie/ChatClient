@@ -12,6 +12,7 @@ public class ChatClient extends Thread{
     public static int port;
     public static String userID;
     public static String startDate;
+    
 
     public static void main(String argv[]) throws Exception {
         //parse arguments to variables

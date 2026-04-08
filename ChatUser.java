@@ -19,22 +19,18 @@ public class ChatUser{
     //equals override
     @Override
     public boolean equals(Object user){
-        System.out.println("astro sweep");
         //i wanted this to check based on a chatuser or a string so i can use it for direct messages
         //                       and checking duplicate nicknames with ArrayList's contains() method
-        //turns out it doesnt work like that for contains
-        //but it does work like that for stuff like "indexOf" so this is still useful
+        //turns out it doesnt work like that for like anything
+        //keeping the string part of that around just in case it becomes useful later
         //anyway we start by checking if the object compared is a chatuser
         if(user instanceof ChatUser){
             //create variable compared equal to user if it was a chat user
             ChatUser compared = (ChatUser) user;
             //check if the user's nickname is equal, if it is, return true, otherwise return false
-            if(compared.nickname.trim().compareTo(this.nickname.trim())==0){
+            if(compared.nickname.equals(this.nickname)){
                 return true;
             } else {
-                System.out.println(1);
-                System.out.println(compared.nickname);
-                System.out.println(this.nickname);
                 return false;
             }
         } else { // end chat user check
@@ -47,20 +43,22 @@ public class ChatUser{
                 if(compared.equals(this.nickname)){
                     return true;
                 } else {
-                    System.out.println(2);
                     return false;
                 }
             } else { //end string check
                 //return false if it isn't a chat user or a string
-                System.out.println(3);
                 return false;
             } //end if
         }// end else
     }// end equals
 
-    //so there are like, timer variables and stuff in java.util, but they all use threading
+    //so there are like, timer classes and stuff in java.util, but they all use a lot of threading
     //and im already using a *lot* of threading, to the point im a bit worried about memory usage
     //so instead of using that, i'm gonna pull a trick from gamedev and just make a delta variable
+    //turns out because all the other threads are running halting expressions that still requires
+    //                               that i make a thread, but its still probably better to have
+    //                               one thread than 20
+    //tl;dr: this is used to keep track of how long it's been since a ping
     public int timerUpdate(){
         //set a variable to the current time so it stays consistent
         long currTime = System.currentTimeMillis();
@@ -110,5 +108,7 @@ public class ChatUser{
         this.outputToUser = new DataOutputStream(this.connectionSocket.getOutputStream());
         this.nickname = name;
         this.room = room;
+        this.lastPing=System.currentTimeMillis();
+        this.pingTimer=0;
     }
 }

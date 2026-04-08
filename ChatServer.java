@@ -1,10 +1,16 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 
 public class ChatServer{
     //list of users is a public static variable so that it can be accessed inside threads
     public static List<ChatUser> userList = Collections.synchronizedList(new ArrayList<ChatUser>());
+    //actual active users int, since the way this is set up requires some nonsense
+    public static int userNum = 0;
+    //date formatting variable, useful for printouts
+    public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     //method to parse number of commands so i don't have to
     //actually while i was writing this it occurred to me that i probably could have used split to make parsing a lot of this easier
@@ -14,6 +20,48 @@ public class ChatServer{
     public static int numArgs(String command){
         return command.split(" ").length;
     } 
+    //new type of thread that handles timer management
+    private static class HeartbeatThread extends Thread{
+        public void run(){
+            //declare system message variable to be used if a timer fails
+            String sysmsg;
+            while(true){
+                //go through each user in the userList
+                for(int i = 0; i<userList.size(); i++){
+                    //if the user is valid, run the timer update. since the timer update returns the time since the last ping, 
+                    //                                                 if it returns greater than 30,000, disconnect the user
+                    if(userList.get(i).nickname.equals("")!=true&&userList.get(i).timerUpdate()>30000){
+                        //create the system messge
+                        sysmsg = "type:system,message:" + userList.get(i).nickname + ": discconnected.,timestamp:" + LocalDateTime.now().format(timeFormat);
+                        try{
+                            //for every single user that isn't the timed out user, if the user is valid, output a system message for the disconnect
+                            for(int j = 0; j<userList.size(); j++){
+                                if(i!=j&&!userList.get(j).nickname.equals("")){
+                                    userList.get(j).outputToUser.writeInt(sysmsg.getBytes().length);
+                                    userList.get(j).outputToUser.write(sysmsg.getBytes());
+                                }
+                            }
+                            //then close the timed out user's connection
+                            userList.get(i).connectionSocket.close();
+                        } catch (IOException e){
+                            e.printStackTrace();
+                        }
+                        //then mark the user as nonvalid
+                        userList.get(i).nickname = "";
+                        //then lower actual usercount
+                        userNum--;
+                    }// end if statement
+                }//end for loop
+                //since the heartbeat thread will only ever be capable of blocking during the process of timing out a user, im also using it to check
+                //                                                       whether or not the userList needs to be cleaned
+                //if the userList has only invalid users, clear the whole thing
+                if(userNum<=0&&userList.size()!=0){
+                    userList.clear();
+                }
+            }//end while loop
+        }//end run method
+    }//end thread class
+
     //new type of thread that takes an int so that it knows which user to listen for
     private static class SocketThread extends Thread {
         int index;
@@ -22,7 +70,6 @@ public class ChatServer{
             this.index = i;
         } //end constructor
 
-        @SuppressWarnings("unlikely-arg-type")
         public void run(){
             //declare string to use for parsing later
             String msg = "";
@@ -99,7 +146,7 @@ public class ChatServer{
                                         msg = "type:pm,from:" + dmTarget + ",text:[PM from " + dmTarget +"] " + payload.substring(payload.indexOf(dmTarget)+dmTarget.length()) + ",timestamp:" + date;
                                         //get new message size
                                         int pmSize = msg.getBytes().length;
-                                        try{                                        
+                                        try{
                                             //send dm to target w/ message framing
                                             userList.get(userList.indexOf(new ChatUser(dmTarget))).outputToUser.writeInt(pmSize);
                                             userList.get(userList.indexOf(new ChatUser(dmTarget))).outputToUser.write(msg.getBytes(), 0, pmSize);
@@ -137,10 +184,10 @@ public class ChatServer{
                                     } else {
                                         //if it isnt, update the nickname
                                         userList.get(this.index).nickname = payload.substring(payload.indexOf(' ')+1,payload.length()-1);
-                                        msg = "type:system,message:nick" + userList.get(this.index).nickname + ",timestamp:" + date;
+                                        msg = "type:system,message:nick" + userList.get(this.index).nickname + ",timestamp:" + LocalDateTime.now().format(timeFormat);
                                         try {
                                             userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
-                                            userList.get(this.index).outputToUser.write(msg.getBytes(), 0, msg.getBytes().length);
+                                            userList.get(this.index).outputToUser.write(msg.getBytes());
                                         } catch (IOException e){
                                             e.printStackTrace();
                                             break;
@@ -159,7 +206,7 @@ public class ChatServer{
                                 //output messages to each user in the list
                                 for (int i = 0; i<userList.size(); i++) {
                                     //check to make sure that you dont send the message back to the user
-                                    if(i!=this.index){
+                                    if(i!=this.index&&userList.get(i).nickname.equals("")!=true){
                                         //send size for message framing, then send actual bytes
                                         userList.get(i).outputToUser.writeInt(n);
                                         userList.get(i).outputToUser.write(messageBytes, 0, n);
@@ -172,7 +219,8 @@ public class ChatServer{
                             } // end try catch block
                         }
                         break;
-                    case "ping":    
+                    case "ping":
+
                         System.out.println("Ping");
                         break;
                     case "disconnect":
@@ -180,10 +228,11 @@ public class ChatServer{
                         System.out.println("disconnect");
                         try{
                             userList.get(index).connectionSocket.close();
-                            userList.get(index).nickname = "nullUser";
+                            userList.get(index).nickname = "";
                         } catch (IOException e){
                             e.printStackTrace();
                         }
+                        userNum--;
                         break;
                     case "register":
                         //if the type is a register ping, check to see if the new nickname is already in the list
@@ -191,6 +240,7 @@ public class ChatServer{
                             //if it is, return an error message
                             type = "error";
                             payload = "Error: Username already registered";
+                            userList.get(this.index).nickname = "";
                         } else {
                             //otherwise, set the new nickname
                             userList.get(this.index).nickname = msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:"));
@@ -200,10 +250,12 @@ public class ChatServer{
                             //message framing, yada yada, this does the same thing all the other try-catch blocks do, you get it by now
                             try {
                                 userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
-                                userList.get(this.index).outputToUser.write(msg.getBytes(), 0, msg.getBytes().length);
+                                userList.get(this.index).outputToUser.write(msg.getBytes());
                             } catch (IOException e){
                                 e.printStackTrace();
                             }
+                            //increase actual user count
+                            userNum++;
                         }
                         break;
                     default:
@@ -213,15 +265,19 @@ public class ChatServer{
                 //if any of the commands or pings returned an error, return an error message to the user
                 if(type.equals("error")){
                     System.out.println(payload);
-                    msg = "type:error,message:" + payload + ",timestamp:" + date;
+                    msg = "type:error,message:" + payload + ",timestamp:" + LocalDateTime.now().format(timeFormat);
                     try {
                         userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
-                        userList.get(this.index).outputToUser.write(msg.getBytes(), 0, msg.getBytes().length);
+                        userList.get(this.index).outputToUser.write(msg.getBytes());
                     } catch (IOException e){
                         e.printStackTrace();
                     }
+                    //set the thread to end if the error was a nickname error
+                    if(userList.get(this.index).nickname.equals("")){
+                        type = "disconnect";
+                    }
                 }
-                //end while loop if type is disconnect
+                //end while loop if type is disconnect, and in so doing end the thread
                 if(type.equals("disconnect")){ 
                     break;
                 }
@@ -229,7 +285,7 @@ public class ChatServer{
         }//end run method
     }//end private subclass
 
-    @SuppressWarnings({ "resource", "unlikely-arg-type" })
+    @SuppressWarnings({ "resource" })
     public static void main(String argv[]) throws Exception {
         
         //get port from arguments
@@ -238,16 +294,17 @@ public class ChatServer{
         //set up welcome socket
         ServerSocket welcome = new ServerSocket(port);
 
+        HeartbeatThread pings = new HeartbeatThread();
+        pings.start();
         //welcome new connections forever
         while(true){
             Socket newConnectionOne = welcome.accept();
             SocketThread newUser;
             //check if existing ChatUser object can be repurposed
-            if(userList.contains(new ChatUser("nullUser"))){
-                System.out.println("weh?");
+            if(userList.contains(new ChatUser(""))){
                 //if so, make a new thread and repurpose the old userList spot
-                newUser = new SocketThread(userList.indexOf(new ChatUser("nullUser")));
-                userList.get(userList.indexOf(new ChatUser("nullUser"))).reUseUser(newConnectionOne, String.valueOf(userList.size()), "lobby");
+                newUser = new SocketThread(userList.indexOf(new ChatUser("")));
+                userList.get(userList.indexOf(new ChatUser(""))).reUseUser(newConnectionOne, String.valueOf(userList.size()), "lobby");
                 
             } else {
                 //if not, add a new user and then start a brand new thread
