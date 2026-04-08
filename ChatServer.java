@@ -65,7 +65,7 @@ public class ChatServer{
     //new type of thread that takes an int so that it knows which user to listen for
     private static class SocketThread extends Thread {
         int index;
-
+        
         public SocketThread(int i){
             this.index = i;
         } //end constructor
@@ -92,17 +92,22 @@ public class ChatServer{
                 } catch (EOFException f) {
                     //exit loop if client closes
                     break;
+                } catch (SocketException s){
+                    //exit loop if socket gets closed
+                    break;
                 } catch (IOException e){
                     e.printStackTrace();
                     break;
                 } // end try catch block
+                //since we have now recieved a message from the user, we will reset the user's ping timer
+                userList.get(this.index).pingTimer=0;
                 //get the type and the date since those are the ones that are always importantand always in the same spot
                 date = msg.substring(msg.lastIndexOf(",timestamp:")+11);
                 //the message always starts with "type:" so we just skip to index 5
                 
                 type = msg.substring(5,msg.indexOf(','));
                 //if i wasnt specifically asked to use "a series of text fields" for the meta data i probably would not have 
-                //                               put that indicator there tbh
+                //                               put the type indicator there at all tbh
                 //but im already playing kinda fast and loose by just making the whole thing one string that i parse for 10 years
                 //so whatever
                 //in my defense figuring out how to reconstruct a json file from bytes when its probably just going to involve
@@ -273,7 +278,7 @@ public class ChatServer{
                     } catch (IOException e){
                         e.printStackTrace();
                     }
-                    //set the thread to end if the error was a nickname error
+                    //set the thread to end if the error nulled the user
                     if(userList.get(this.index).nickname.equals("")){
                         type = "disconnect";
                     }

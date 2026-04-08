@@ -6,13 +6,45 @@ import java.time.format.DateTimeFormatter;
 
 public class ChatClient extends Thread{
     public static DataInputStream serverOutput;
+    public static DataOutputStream userOutput;
     public static String nickname;
     public static boolean leave = false;
     public static String server;
     public static int port;
     public static String userID;
     public static String startDate;
+    public static long lastPing = System.currentTimeMillis();
+    public static int pulseTimer=0;
+    public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
+    public static void pingSent(){
+        lastPing = System.currentTimeMillis();
+        pulseTimer = 0;
+    }
+
+    //thread to handle heartbeat pings to server
+    private static class pingThread extends Thread{
+        public void run(){
+            //declare time variable
+            long currTime;
+            String pingMsg;
+            while(!leave){
+                currTime = System.currentTimeMillis();
+                pulseTimer += (int) currTime - lastPing;
+                lastPing = currTime;
+                if(pulseTimer>10000){
+                    pingMsg = "type:ping,nickname:"+ nickname +",userID:" + userID + ",timestamp:" + LocalDateTime.now().format(timeFormat);
+                    try {
+                        userOutput.writeInt(pingMsg.getBytes().length);
+                        userOutput.write(pingMsg.getBytes());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    lastPing = 0;
+                }
+            }
+        }
+    } 
 
     public static void main(String argv[]) throws Exception {
         //parse arguments to variables
@@ -23,12 +55,12 @@ public class ChatClient extends Thread{
         
         //date and time stuff
         LocalDateTime timeKeeper;
-        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        
 
         //create socket to communicate with server
         Socket connection = new Socket(server,port);
         //create reader for user input, path to output user input to server, and path for messages from server
-        DataOutputStream userOutput = new DataOutputStream(connection.getOutputStream());
+        userOutput = new DataOutputStream(connection.getOutputStream());
         BufferedReader userInput = new BufferedReader (new InputStreamReader(System.in));
         serverOutput = new DataInputStream(connection.getInputStream());
 
@@ -44,6 +76,10 @@ public class ChatClient extends Thread{
         userMessage = "type:register,nickname:" + nickname + ",userID:" + userID + ",timestamp:" + timeKeeper.format(timeFormat);
         userOutput.writeInt(userMessage.getBytes().length);
         userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
+
+        //set up heartbeat thread
+        pingThread heartbeat = new pingThread();
+        heartbeat.start();
 
         //accept new messages forever
         while(!leave){
@@ -62,6 +98,8 @@ public class ChatClient extends Thread{
             //send message as length in bytes and then a series of bytes
             userOutput.writeInt(userMessage.getBytes().length);
             userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
+            //tell the heartbeat timer that a message has been sent
+            pingSent();
         }//end while loop
         //on disconnect, close connection
         System.out.println("Disconnect Successful");
