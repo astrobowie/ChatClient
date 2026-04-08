@@ -172,8 +172,7 @@ public class ChatServer{
                             } // end try catch block
                         }
                         break;
-                    case "ping":
-                        
+                    case "ping":    
                         System.out.println("Ping");
                         break;
                     case "disconnect":
@@ -188,7 +187,7 @@ public class ChatServer{
                         break;
                     case "register":
                         //if the type is a register ping, check to see if the new nickname is already in the list
-                        if(userList.contains(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:")))){
+                        if(userList.contains(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",timestamp:")))){
                             //if it is, return an error message
                             type = "error";
                             payload = "Error: Username already registered";
