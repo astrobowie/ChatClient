@@ -102,7 +102,7 @@ public class ChatServer{
                                         try{                                        
                                             //send dm to target w/ message framing
                                             userList.get(userList.indexOf(new ChatUser(dmTarget))).outputToUser.writeInt(pmSize);
-                                            userList.get(userList.indexOf(new ChatUser(dmTarget))).outputToUser.write(messageBytes, 0, pmSize);
+                                            userList.get(userList.indexOf(new ChatUser(dmTarget))).outputToUser.write(msg.getBytes(), 0, pmSize);
                                             
                                         } catch (EOFException f) {
                                             f.printStackTrace();
@@ -244,6 +244,7 @@ public class ChatServer{
             SocketThread newUser;
             //check if existing ChatUser object can be repurposed
             if(userList.contains(new ChatUser("nullUser"))){
+                System.out.println("weh?");
                 //if so, make a new thread and repurpose the old userList spot
                 newUser = new SocketThread(userList.indexOf(new ChatUser("nullUser")));
                 userList.get(userList.indexOf(new ChatUser("nullUser"))).reUseUser(newConnectionOne, String.valueOf(userList.size()), "lobby");
