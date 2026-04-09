@@ -99,6 +99,7 @@ public class ChatServer{
             } catch (IOException e){
                 e.printStackTrace();
             } // end try catch block
+            rooms.get(rooms.indexOf(new ChatRoom(room))).historyAdd(new String(messageBytes));
         }
 
         public void run(){
@@ -132,7 +133,6 @@ public class ChatServer{
                     break;
                 } // end try catch block
                 //since we have now recieved a message from the user, we will reset the user's ping timer
-                System.out.println(userList.get(this.index).nickname()+" "+userList.get(this.index).pingValue());
                 userList.get(this.index).timerReset();
                 //get the type and the date since those are the ones that are always importantand always in the same spot
                 date = msg.substring(msg.lastIndexOf(",timestamp:")+11);
@@ -359,7 +359,7 @@ public class ChatServer{
                         //also decrement the actual user number
                         userNum--;
                         //also remove the user from their room
-
+                        rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
                         break;
                     case "register":
                         //if the type is a register ping, check to see if the new nickname is already in the list
@@ -384,8 +384,6 @@ public class ChatServer{
                             } catch (IOException e){
                                 e.printStackTrace();
                             }
-                            //increase actual user count
-                            
                         }
                         break;
                     default:
@@ -409,6 +407,7 @@ public class ChatServer{
                 }
                 //end while loop if type is disconnect, and in so doing end the thread
                 if(type.equals("disconnect")){ 
+                    System.out.println(rooms.get(rooms.indexOf(new ChatRoom("lobby"))));
                     break;
                 }
             }//end while loop
