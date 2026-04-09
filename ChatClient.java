@@ -18,7 +18,7 @@ public class ChatClient extends Thread{
     public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     public static Object lock = new Object();
     
-    public static void pingSent(){
+    public static synchronized void pingSent(){
         lastPing = System.currentTimeMillis();
         pulseTimer = 0;
     }
@@ -35,15 +35,13 @@ public class ChatClient extends Thread{
                 lastPing = currTime;
                 if(pulseTimer>10000){
                     pingMsg = "type:ping,nickname:"+ nickname +",userID:" + userID + ",timestamp:" + LocalDateTime.now().format(timeFormat);
-                    synchronized (lock){
                         try {
                             userOutput.writeInt(pingMsg.getBytes().length);
                             userOutput.write(pingMsg.getBytes());
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                    }
-                    lastPing = 0;
+                    pingSent();
                 }
             }
         }
