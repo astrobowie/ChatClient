@@ -12,7 +12,7 @@ public class ChatUser{
     public String userID = "temp";
     //room
     public String room = "lobby";
-    //variables counting time since
+    //variables counting time since last ping
     private long lastPing = System.currentTimeMillis();
     private int pingTimer = 0;
 
@@ -92,6 +92,7 @@ public class ChatUser{
         return pingTimer;
     }
 
+    //synchronized setters and getters for the nickname
     public synchronized String nickname(){
         return nickname;
     }
@@ -100,8 +101,13 @@ public class ChatUser{
         this.nickname = name;
     }
 
+    //synchronized setters and getters for the room
     public synchronized String room(){
         return room;
+    }
+
+    public synchronized void newRoom(String newRoom){
+        this.room=newRoom;
     }
 
     //constructor method

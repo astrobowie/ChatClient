@@ -12,6 +12,9 @@ public class ChatServer{
     //date formatting variable, useful for printouts
     public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    //list of rooms, stored in public static variable so that it can be accessed in threads
+    public static List<ChatRoom> rooms = Collections.synchronizedList(new ArrayList<ChatRoom>());
+
     //method to parse number of commands so i don't have to
     //actually while i was writing this it occurred to me that i probably could have used split to make parsing a lot of this easier
     //and more readable for that matter
@@ -77,12 +80,34 @@ public class ChatServer{
             this.index = i;
         } //end constructor
 
+        //method for sending a message selectively to every person in a room
+        public void messageSend(String room, int index, byte[] messageBytes){
+            //get the index of every user in the room
+            int[] roomUsers = rooms.get(rooms.indexOf(new ChatRoom(room))).users();
+            try{
+                //output messages to each user in the list of users in the room
+                for (int i : roomUsers) {
+                    //check to make sure that you dont send the message back to the user
+                    if(i!=index&&userList.get(i).nickname().equals("")!=true){
+                        //send size for message framing, then send actual bytes
+                        userList.get(i).outputToUser.writeInt(messageBytes.length);
+                        userList.get(i).outputToUser.write(messageBytes);
+                    }
+                }
+            } catch (EOFException f) {
+                f.printStackTrace();
+            } catch (IOException e){
+                e.printStackTrace();
+            } // end try catch block
+        }
+
         public void run(){
             //declare string to use for parsing later
             String msg = "";
             String type;
             String date;
             String payload = "";
+            String room = "";
             int n = 0;
             byte[] messageBytes = null;
 
@@ -137,16 +162,59 @@ public class ChatServer{
                             //if it is a command, do different stuff depending on the command
                             switch (payload.substring(1, payload.indexOf(' '))){
                                 case "join":
-                                    if(numArgs(payload)<2){
+                                    if(numArgs(payload)!=2){
                                         type="error";
                                         payload = "Error: Invalid arguments!";
                                         break;
+                                    } else {
+                                        //break the room argument off on its own
+                                        String roomTarget = payload.substring(6,payload.indexOf(' ',6));
+                                        //check if the room argument is valid
+                                        if(roomTarget.length()>0&&roomTarget.length()<=20){
+                                            //if it is, check if the room already exists
+                                            if(rooms.contains(new ChatRoom(roomTarget))){
+                                                //if it does, move user to that room
+                                                //remove user from previous room
+                                                rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
+                                                //add user to new room
+                                                rooms.get(rooms.indexOf(new ChatRoom(roomTarget))).add(this.index);
+                                            } else {
+                                                //if it doesn't, make the room and move the user to it
+                                                rooms.add(new ChatRoom(roomTarget));
+                                                rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
+                                                //add user to new room
+                                                rooms.get(rooms.indexOf(new ChatRoom(roomTarget))).add(this.index);
+                                            }
+                                            //then send a system message to the user
+                                            String userMoveMsg = "type:system,message:room" + roomTarget + ",timestamp:" + LocalDateTime.now().format(timeFormat);
+                                            try {
+                                                userList.get(this.index).outputToUser.writeInt(userMoveMsg.getBytes().length);
+                                                userList.get(this.index).outputToUser.write(userMoveMsg.getBytes());
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                            //then send a system message to the people in the user's old room
+                                            String otherMoveMsg = "type:system,message:" + userList.get(this.index).nickname() + ": joined room " + roomTarget + ".,timestamp:" + LocalDateTime.now().format(timeFormat);
+                                            messageSend(userList.get(this.index).room(),this.index,otherMoveMsg.getBytes());
+                                            //then send a system message to the people in the user's new room
+                                            messageSend(roomTarget,this.index,otherMoveMsg.getBytes());
+                                            //then update the room on the server side user list
+                                            userList.get(this.index).newRoom(roomTarget);
+                                            //if i were building this from the ground up to my own specifications i would probably make this look cleaner
+                                            //as it stands the need to match both the specifications and make it work on what i've already build is kinda killing this
+                                            //thats fine though i guess
+                                        } else {
+                                            type="error";
+                                            payload = "Error: Invalid arguments!";
+                                            break;
+                                        }
                                     }
                                     System.out.println("join");
                                     break;
                                 case "msg":
                                     //check if arguments are legal
                                     if(numArgs(payload)<3){ //<-- this line has a heart in it! yay
+                                        //if arguments are not legal, get mad at the user
                                         type="error";
                                         payload = "Error: Invalid arguments!";
                                         break;
@@ -175,12 +243,67 @@ public class ChatServer{
                                     }
                                     break;
                                 case "leave":
+                                    //remove user from previous room
+                                    rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
+                                    //add user to new room
+                                    rooms.get(rooms.indexOf(new ChatRoom("lobby"))).add(this.index);
+                                    //then send a system message to the user
+                                    String userMoveMsg = "type:system,message:roomlobby,timestamp:" + LocalDateTime.now().format(timeFormat);
+                                    try {
+                                        userList.get(this.index).outputToUser.writeInt(userMoveMsg.getBytes().length);
+                                        userList.get(this.index).outputToUser.write(userMoveMsg.getBytes());
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    //then send a system message to the people in the user's old room
+                                    String otherMoveMsg = "type:system,message:" + userList.get(this.index).nickname() + ": joined room lobby.,timestamp:" + LocalDateTime.now().format(timeFormat);
+                                    messageSend(userList.get(this.index).room(),this.index,otherMoveMsg.getBytes());
+                                    //then send a system message to the people in the user's new room
+                                    messageSend("lobby",this.index,otherMoveMsg.getBytes());
+                                    //then update the room on the server side user list
+                                    userList.get(this.index).newRoom("lobby");
                                     System.out.println("leave");
                                     break;
                                 case "rooms":
+                                    //declare list of all rooms, start with meta data
+                                    String roomList = "type:system,message:";
+                                    //add the name of every room to the message
+                                    for(int i = 0; i<rooms.size(); i++){
+                                        roomList += rooms.get(i).name() + ", ";
+                                    }
+                                    //remove the last comma from the list
+                                    roomList = roomList.substring(0,roomList.length()-2);
+                                    //add final meta data
+                                    roomList += ",timestamp:" + LocalDateTime.now().format(timeFormat);
+                                    //frame and send message
+                                    try {
+                                        userList.get(this.index).outputToUser.writeInt(roomList.getBytes().length);
+                                        userList.get(this.index).outputToUser.write(roomList.getBytes());
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
                                     System.out.println("rooms");
                                     break;
                                 case "who":
+                                    //make string with metadata
+                                    String roomUsers = "type:system,message:";
+                                    //get user indexes from current room
+                                    int[] roomUserIndex = rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).users();
+                                    //add names of all users
+                                    for(int i : roomUserIndex){
+                                        roomUsers += userList.get(i).nickname() + ", ";
+                                    }
+                                    //remove the last comma from the list
+                                    roomUsers = roomUsers.substring(0,roomUsers.length()-2);
+                                    //add final meta data
+                                    roomUsers += ",timestamp:" + LocalDateTime.now().format(timeFormat);
+                                    //frame and send message
+                                    try {
+                                        userList.get(this.index).outputToUser.writeInt(roomUsers.getBytes().length);
+                                        userList.get(this.index).outputToUser.write(roomUsers.getBytes());
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
                                     System.out.println("who");
                                     break;
                                 case "nick":
@@ -215,21 +338,10 @@ public class ChatServer{
                         } //end command handling if-statement
                         //else statement for if its just, like, a normal text message
                         else { 
-                            try{
-                                //output messages to each user in the list
-                                for (int i = 0; i<userList.size(); i++) {
-                                    //check to make sure that you dont send the message back to the user
-                                    if(i!=this.index&&userList.get(i).nickname().equals("")!=true){
-                                        //send size for message framing, then send actual bytes
-                                        userList.get(i).outputToUser.writeInt(n);
-                                        userList.get(i).outputToUser.write(messageBytes, 0, n);
-                                    }
-                                }
-                            } catch (EOFException f) {
-                                f.printStackTrace();
-                            } catch (IOException e){
-                                e.printStackTrace();
-                            } // end try catch block
+                            //get user's room from message
+                            room = msg.substring(msg.indexOf(",room:")+6,msg.lastIndexOf(",nickname:"));
+                            //send message to every user in the room who isnt you
+                            messageSend(room, this.index, messageBytes);
                         }
                         break;
                     case "ping":
@@ -244,7 +356,10 @@ public class ChatServer{
                         } catch (IOException e){
                             e.printStackTrace();
                         }
+                        //also decrement the actual user number
                         userNum--;
+                        //also remove the user from their room
+
                         break;
                     case "register":
                         //if the type is a register ping, check to see if the new nickname is already in the list
@@ -258,6 +373,8 @@ public class ChatServer{
                             //otherwise, set the new nickname
                             userList.get(this.index).name(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:")));
                             System.out.println("Registered");
+                            //then add user to lobby
+                            rooms.get(0).add(this.index);
                             //then send ok message
                             msg = "type:ok,message:registered,room:lobby,timestamp:" + date;
                             //message framing, yada yada, this does the same thing all the other try-catch blocks do, you get it by now
@@ -307,8 +424,13 @@ public class ChatServer{
         //set up welcome socket
         ServerSocket welcome = new ServerSocket(port);
 
+        //set up thread to maintain pings and kick dc'd users
         HeartbeatThread pings = new HeartbeatThread();
         pings.start();
+
+        //create lobby room
+        rooms.add(new ChatRoom("lobby"));
+
         //welcome new connections forever
         while(true){
             Socket newConnectionOne = welcome.accept();

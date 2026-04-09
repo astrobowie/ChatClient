@@ -11,6 +11,7 @@ public class ChatClient extends Thread{
     public static boolean leave = false;
     public static String server;
     public static int port;
+    public static String room;
     public static String userID;
     public static String startDate;
     public static long lastPing = System.currentTimeMillis();
@@ -79,7 +80,7 @@ public class ChatClient extends Thread{
             userOutput.writeInt(userMessage.getBytes().length);
             userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
         }
-        
+        room = "lobby";
 
         //set up heartbeat thread
         pingThread heartbeat = new pingThread();
@@ -97,7 +98,7 @@ public class ChatClient extends Thread{
                 leave = true;
             } else {
                 //otherwise, add metadata to user message and send it
-                userMessage = "type:text,room:lobby,nickname:" + nickname + ",userID:" + userID + ",text:" + userMessage + ",timestamp:" + timeKeeper.format(timeFormat);
+                userMessage = "type:text,room:"+ room +",nickname:" + nickname + ",userID:" + userID + ",text:" + userMessage + ",timestamp:" + timeKeeper.format(timeFormat);
             } // end if else
             //send message as length in bytes and then a series of bytes
             synchronized(lock){
@@ -177,8 +178,11 @@ public class ChatClient extends Thread{
                         if(msg1.substring(msg1.indexOf(",message:")+9,msg1.indexOf(",message:")+9+4).equals("nick")){
                             nickname = msg1.substring(msg1.indexOf(",message:")+9+4,msg1.lastIndexOf(",timestamp:"));
                         } else {
+                        if(msg1.substring(msg1.indexOf(",message:")+9,msg1.indexOf(",message:")+9+4).equals("room")){
+                            room = msg1.substring(msg1.indexOf(",message:")+9+4,msg1.lastIndexOf(",timestamp:"));
+                        } else {
                             payload += msg1.substring(msg1.indexOf(",message:")+9,msg1.lastIndexOf(",timestamp:"));
-                        }
+                        }}
                         break;
                     case "history":
                         System.out.println("History");
