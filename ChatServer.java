@@ -108,7 +108,7 @@ public class ChatServer{
             String type;
             String date;
             String payload = "";
-            String room = "";
+            String room;
             int n = 0;
             byte[] messageBytes = null;
 
@@ -348,18 +348,24 @@ public class ChatServer{
                         System.out.println("Ping " + userList.get(this.index).nickname()+ " " + userList.get(this.index).pingValue());
                         break;
                     case "disconnect":
-                        //on disconnect message, close the socket and mark userlist slot for reuse
+                        //on disconnect message, send system message to all users in the room
+                        //construct exit message
+                        String exitMessage = "type:system,message:" + userList.get(this.index).nickname() + " disconnected,timestamp:"+ LocalDateTime.now().format(timeFormat);
+                        //send the message
+                        messageSend(userList.get(this.index).room(), n, exitMessage.getBytes());
+                        //also remove the user from their room
+                        rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
+                        //also close the socket and mark userlist slot for reuse
                         System.out.println("disconnect");
                         try{
-                            userList.get(index).connectionSocket.close();
-                            userList.get(index).name("");
+                            userList.get(this.index).connectionSocket.close();
                         } catch (IOException e){
                             e.printStackTrace();
                         }
+                        userList.get(index).name("");
                         //also decrement the actual user number
                         userNum--;
-                        //also remove the user from their room
-                        rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
+                        
                         break;
                     case "register":
                         //if the type is a register ping, check to see if the new nickname is already in the list
