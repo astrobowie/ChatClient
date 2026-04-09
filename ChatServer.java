@@ -37,25 +37,26 @@ public class ChatServer{
                         userList.get(i).timerUpdate();
                         //check if user's pingvalue is greater than 30000
                         if(userList.get(i).pingValue()>30000){
-                            System.out.println(userList.get(i).nickname() + " disconnect " + userList.get(i).pingValue());
+                            //system logging
+                            System.out.println(LocalDateTime.now().format(timeFormat) + " :: " + userList.get(i).nickname() + ": disconnected.");
                             //create the system message
                             sysmsg = "type:system,message:" + userList.get(i).nickname() + ": disconnected.,timestamp:" + LocalDateTime.now().format(timeFormat);
-                            try{
-                                //for every single user that isn't the timed out user, if the user is valid, output a system message for the disconnect
-                                for(int j = 0; j<userList.size(); j++){
-                                    if(i!=j&&!userList.get(j).nickname().equals("")){
-                                        userList.get(j).outputToUser.writeInt(sysmsg.getBytes().length);
-                                        userList.get(j).outputToUser.write(sysmsg.getBytes());
-                                    }
-                                }
-                                //then close the timed out user's connection
-                                userList.get(i).connectionSocket.close();
-                            } catch (IOException e){
-                                e.printStackTrace();
+                            //for every single user that isn't the timed out user, if the user is valid, output a system message for the disconnect
+                            for(int j = 0; j<userList.size(); j++){
+                                try {
+                                    
+                                        if(i!=j&&!userList.get(j).nickname().equals("")){
+                                            userList.get(j).outputToUser.writeInt(sysmsg.getBytes().length);
+                                            userList.get(j).outputToUser.write(sysmsg.getBytes());
+                                        }
+                                    
+                                    //then close the timed out user's connection
+                                    userList.get(i).connectionSocket.close();
+                                }catch (IOException e){}
                             }
-                            //then mark the user as nonvalid
+                            //mark timed out user as null
                             userList.get(i).name("");
-                            //then lower actual usercount
+                            //also decrement the actual user number
                             userNum--;
                         }// end if statement
                     }
@@ -84,7 +85,7 @@ public class ChatServer{
         public void messageSend(String room, int index, byte[] messageBytes){
             //get the index of every user in the room
             int[] roomUsers = rooms.get(rooms.indexOf(new ChatRoom(room))).users();
-            try{
+            try {
                 //output messages to each user in the list of users in the room
                 for (int i : roomUsers) {
                     //check to make sure that you dont send the message back to the user
@@ -95,9 +96,9 @@ public class ChatServer{
                     }
                 }
             } catch (EOFException f) {
-                f.printStackTrace();
+                return;
             } catch (IOException e){
-                e.printStackTrace();
+                return;
             } // end try catch block
             rooms.get(rooms.indexOf(new ChatRoom(room))).historyAdd(new String(messageBytes));
             String usersInRoom = "";
@@ -141,13 +142,20 @@ public class ChatServer{
                     userList.get(this.index).userInput.read(messageBytes, 0, n);
                     msg = new String(messageBytes);
                 } catch (EOFException f) {
-                    //exit loop if client closes
+                    //set name to null and display disconnect message on socket closure
+                    //system logging
+                    System.out.println(LocalDateTime.now().format(timeFormat) + " :: " + userList.get(this.index).nickname() + ": disconnected.");
+                    userList.get(this.index).name("");
+                    //exit loop
                     break;
                 } catch (SocketException s){
+                    //set name to null and display disconnect message on socket closure
+                    //system logging
+                    System.out.println(LocalDateTime.now().format(timeFormat) + " :: " + userList.get(this.index).nickname() + ": disconnected.");
+                    userList.get(this.index).name("");
                     //exit loop if socket gets closed
                     break;
                 } catch (IOException e){
-                    e.printStackTrace();
                     break;
                 } // end try catch block
                 //since we have now recieved a message from the user, we will reset the user's ping timer
@@ -211,8 +219,7 @@ public class ChatServer{
                                             try {
                                                 userList.get(this.index).outputToUser.writeInt(userMoveMsg.getBytes().length);
                                                 userList.get(this.index).outputToUser.write(userMoveMsg.getBytes());
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
+                                            } catch (IOException e) { break;
                                             }
                                             //then send a system message to the people in the user's old room
                                             String otherMoveMsg = "type:system,message:" + userList.get(this.index).nickname() + ": joined room " + roomTarget + ".,timestamp:" + LocalDateTime.now().format(timeFormat);
@@ -231,9 +238,7 @@ public class ChatServer{
                                                 //frame and send the history
                                                 userList.get(this.index).outputToUser.writeInt(historyString.getBytes().length);
                                                 userList.get(this.index).outputToUser.write(historyString.getBytes());
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
+                                            } catch (IOException e) { break;}
                                             //system logging
                                             System.out.println("HistoryDelivered: Room:" + roomTarget + ", To:" + userList.get(this.index).nickname() + ", Count:" + String.valueOf(rooms.get(rooms.indexOf(new ChatRoom(roomTarget))).historySize()));
                                         } else {
@@ -261,16 +266,12 @@ public class ChatServer{
                                         msg = "type:pm,from:" + userList.get(this.index).nickname() + ",text:[PM from " + userList.get(this.index).nickname() +"] " + payload.substring(payload.indexOf(dmTarget)+dmTarget.length()) + ",timestamp:" + date;
                                         //get new message size
                                         int pmSize = msg.getBytes().length;
-                                        try{
+                                        try {
                                             //send dm to target w/ message framing
                                             userList.get(userList.indexOf(new ChatUser(dmTarget))).outputToUser.writeInt(pmSize);
                                             userList.get(userList.indexOf(new ChatUser(dmTarget))).outputToUser.write(msg.getBytes(), 0, pmSize);
                                             
-                                        } catch (EOFException f) {
-                                            f.printStackTrace();
-                                        } catch (IOException e){
-                                            e.printStackTrace();
-                                        } // end try catch block
+                                        } catch (IOException e){ break; } // end try catch block
                                         //system logging
                                         System.out.println("PrivateDelivered: From:" +userList.get(this.index).nickname()+", To:" + dmTarget +", Date/Time:" + date +", Msg-Size:" + pmSize);
                                     } else { //if user isnt real send back error ping
@@ -288,9 +289,7 @@ public class ChatServer{
                                     try {
                                         userList.get(this.index).outputToUser.writeInt(userMoveMsg.getBytes().length);
                                         userList.get(this.index).outputToUser.write(userMoveMsg.getBytes());
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
+                                    } catch (IOException e) { break; }
                                     //then send a system message to the people in the user's old room
                                     String otherMoveMsg = "type:system,message:" + userList.get(this.index).nickname() + " joined room lobby.,timestamp:" + LocalDateTime.now().format(timeFormat);
                                     messageSend(userList.get(this.index).room(),this.index,otherMoveMsg.getBytes());
@@ -315,8 +314,7 @@ public class ChatServer{
                                     try {
                                         userList.get(this.index).outputToUser.writeInt(roomList.getBytes().length);
                                         userList.get(this.index).outputToUser.write(roomList.getBytes());
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
+                                    } catch (IOException e) { break;
                                     }
                                     System.out.println("rooms");
                                     break;
@@ -337,8 +335,7 @@ public class ChatServer{
                                     try {
                                         userList.get(this.index).outputToUser.writeInt(roomUsers.getBytes().length);
                                         userList.get(this.index).outputToUser.write(roomUsers.getBytes());
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
+                                    } catch (IOException e) { break;
                                     }
                                     System.out.println("who");
                                     break;
@@ -362,7 +359,6 @@ public class ChatServer{
                                             userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
                                             userList.get(this.index).outputToUser.write(msg.getBytes());
                                         } catch (IOException e){
-                                            e.printStackTrace();
                                             break;
                                         }                                        
                                     }
@@ -395,11 +391,9 @@ public class ChatServer{
                         //also remove the user from their room
                         rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
                         //also close the socket and mark userlist slot for reuse
-                        try{
+                        try {
                             userList.get(this.index).connectionSocket.close();
-                        } catch (IOException e){
-                            e.printStackTrace();
-                        }
+                        } catch (IOException e){}
                         userList.get(index).name("");
                         //also decrement the actual user number
                         userNum--;
@@ -426,7 +420,6 @@ public class ChatServer{
                                 userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
                                 userList.get(this.index).outputToUser.write(msg.getBytes());
                             } catch (IOException e){
-                                e.printStackTrace();
                             }
                         }
                         break;
@@ -441,9 +434,7 @@ public class ChatServer{
                     try {
                         userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
                         userList.get(this.index).outputToUser.write(msg.getBytes());
-                    } catch (IOException e){
-                        e.printStackTrace();
-                    }
+                    } catch (IOException e){}
                     //set the thread to end if the error nulled the user
                     if(userList.get(this.index).nickname().equals("")){
                         type = "disconnect";
@@ -451,7 +442,6 @@ public class ChatServer{
                 }
                 //end while loop if type is disconnect, and in so doing end the thread
                 if(type.equals("disconnect")){ 
-                    
                     break;
                 }
             }//end while loop
