@@ -407,7 +407,7 @@ public class ChatServer{
                 }
                 //end while loop if type is disconnect, and in so doing end the thread
                 if(type.equals("disconnect")){ 
-                    System.out.println(rooms.get(rooms.indexOf(new ChatRoom("lobby"))));
+                    System.out.println(rooms.get(rooms.indexOf(new ChatRoom("lobby"))).historyGet());
                     break;
                 }
             }//end while loop
