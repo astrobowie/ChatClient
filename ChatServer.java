@@ -100,6 +100,24 @@ public class ChatServer{
                 e.printStackTrace();
             } // end try catch block
             rooms.get(rooms.indexOf(new ChatRoom(room))).historyAdd(new String(messageBytes));
+            String usersInRoom = "";
+            //get user indexes from current room
+            int[] roomUserIndex = rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).users();
+            //add names of all users
+            for(int i : roomUserIndex){
+                if(i!=this.index){
+                    usersInRoom += userList.get(i).nickname() + ", ";
+                }
+            }
+            if(usersInRoom.equals("")){
+                //if list is empty, add system logging special case
+                usersInRoom = "(none)";
+            } else {
+                //otherwise remove the last comma from the list
+                usersInRoom = usersInRoom.substring(0,usersInRoom.length()-2);
+            }
+
+            System.out.println("Delivered(Room="+room+"): " + usersInRoom);
         }
 
         public void run(){
@@ -157,6 +175,9 @@ public class ChatServer{
                         //that's not an ellegant solution but the alternative was throwing a ternary operator into the switch case statement
                         //which i think would put me on a list somewhere
                         payload = msg.substring(msg.indexOf(",text:")+6, msg.lastIndexOf(",timestamp:")) + " ";
+                        //serverlogging
+                        //this is the worst println command ive ever run
+                        System.out.println("Recieved: IP:" + userList.get(this.index).connectionSocket.getInetAddress().toString() +", Port:" + String.valueOf(userList.get(this.index).connectionSocket.getPort()) + ", Client-Nickname:" + userList.get(this.index).nickname() + ", ClientID:" + msg.substring(msg.indexOf(",userID:")+8,msg.lastIndexOf(",timestamp:"))+", Room:" + userList.get(this.index).room() + ", Date/Time:" +date +", Msg-Size:" + String.valueOf(n));
                         //check if the message is a command
                         if(payload.charAt(0)=='/'){
                             //if it is a command, do different stuff depending on the command
@@ -213,13 +234,16 @@ public class ChatServer{
                                             } catch (IOException e) {
                                                 e.printStackTrace();
                                             }
+                                            //system logging
+                                            System.out.println("HistoryDelivered: Room:" + roomTarget + ", To:" + userList.get(this.index).nickname() + ", Count:" + String.valueOf(rooms.get(rooms.indexOf(new ChatRoom(roomTarget))).historySize()));
                                         } else {
                                             type="error";
                                             payload = "Error: Invalid arguments!";
                                             break;
-                                        }
-                                    }
-                                    System.out.println("join");
+                                        } //end if statement
+                                        System.out.println(date + " :: " + userList.get(this.index).nickname() + ": joined room " + roomTarget + ".");
+                                    } //end else
+                                    
                                     break;
                                 case "msg":
                                     //check if arguments are legal
@@ -234,7 +258,7 @@ public class ChatServer{
                                     //check if user is real
                                     if(userList.contains(new ChatUser(dmTarget))){
                                         //replace message with pm metadata and payload
-                                        msg = "type:pm,from:" + dmTarget + ",text:[PM from " + dmTarget +"] " + payload.substring(payload.indexOf(dmTarget)+dmTarget.length()) + ",timestamp:" + date;
+                                        msg = "type:pm,from:" + userList.get(this.index).nickname() + ",text:[PM from " + userList.get(this.index).nickname() +"] " + payload.substring(payload.indexOf(dmTarget)+dmTarget.length()) + ",timestamp:" + date;
                                         //get new message size
                                         int pmSize = msg.getBytes().length;
                                         try{
@@ -247,6 +271,8 @@ public class ChatServer{
                                         } catch (IOException e){
                                             e.printStackTrace();
                                         } // end try catch block
+                                        //system logging
+                                        System.out.println("PrivateDelivered: From:" +userList.get(this.index).nickname()+", To:" + dmTarget +", Date/Time:" + date +", Msg-Size:" + pmSize);
                                     } else { //if user isnt real send back error ping
                                         type = "error";
                                         payload = "Error: User " + dmTarget + " does not exist!";
@@ -329,6 +355,7 @@ public class ChatServer{
                                         payload = "Error: Username already registered";
                                     } else {
                                         //if it isnt, update the nickname
+                                        System.out.println(date + " :: " + userList.get(this.index).nickname() + ": changed nickname to " + payload.substring(payload.indexOf(' ')+1,payload.length()-1) + ".");
                                         userList.get(this.index).name(payload.substring(payload.indexOf(' ')+1,payload.length()-1));
                                         msg = "type:system,message:nick" + userList.get(this.index).nickname() + ",timestamp:" + LocalDateTime.now().format(timeFormat);
                                         try {
@@ -338,6 +365,8 @@ public class ChatServer{
                                             e.printStackTrace();
                                             break;
                                         }
+
+                                        
                                     }
                                     break;
                                 default:
@@ -352,6 +381,7 @@ public class ChatServer{
                             room = msg.substring(msg.indexOf(",room:")+6,msg.lastIndexOf(",nickname:"));
                             //send message to every user in the room who isnt you
                             messageSend(room, this.index, messageBytes);
+                            
                         }
                         break;
                     case "ping":
@@ -359,8 +389,10 @@ public class ChatServer{
                         break;
                     case "disconnect":
                         //on disconnect message, send system message to all users in the room
+                        //system logging
+                        System.out.println(date + " :: " + userList.get(this.index).nickname() + ": disconnected.");
                         //construct exit message
-                        String exitMessage = "type:system,message:" + userList.get(this.index).nickname() + " disconnected,timestamp:"+ LocalDateTime.now().format(timeFormat);
+                        String exitMessage = "type:system,message:" + userList.get(this.index).nickname() + " disconnected.,timestamp:"+ LocalDateTime.now().format(timeFormat);
                         //send the message
                         messageSend(userList.get(this.index).room(), n, exitMessage.getBytes());
                         //also remove the user from their room
@@ -388,7 +420,7 @@ public class ChatServer{
                         } else {
                             //otherwise, set the new nickname
                             userList.get(this.index).name(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:")));
-                            System.out.println("Registered");
+                            System.out.println(date + " :: " + userList.get(this.index).nickname() + ": connected. (ClientID=" + msg.substring(msg.indexOf(",userID:")+8, msg.lastIndexOf(",timestamp:"))+")");
                             //then add user to lobby
                             rooms.get(0).add(this.index);
                             //then send ok message
@@ -423,7 +455,7 @@ public class ChatServer{
                 }
                 //end while loop if type is disconnect, and in so doing end the thread
                 if(type.equals("disconnect")){ 
-                    System.out.println(rooms.get(rooms.indexOf(new ChatRoom("lobby"))).historyGet());
+                    
                     break;
                 }
             }//end while loop
@@ -435,7 +467,7 @@ public class ChatServer{
         
         //get port from arguments
         int port;
-        if(Integer.parseInt(argv[0])<11000&&Integer.parseInt(argv[0])>=10000){
+        if(Integer.parseInt(argv[0])<=11000&&Integer.parseInt(argv[0])>=10000){
             port = Integer.parseInt(argv[0]);
         } else {
             System.out.println("ERR - arg 1");
@@ -443,6 +475,8 @@ public class ChatServer{
         }
         //set up welcome socket
         ServerSocket welcome = new ServerSocket(port);
+
+        System.out.println("ChatServer started with server IP: " +  welcome.getInetAddress().toString() + ", port: " + String.valueOf(port) + ", Date/Time: " + LocalDateTime.now().format(timeFormat));
 
         //set up thread to maintain pings and kick dc'd users
         HeartbeatThread pings = new HeartbeatThread();
@@ -468,9 +502,6 @@ public class ChatServer{
                 userList.add(new ChatUser(newConnectionOne, String.valueOf(userList.size()), "lobby"));
                 newUser = new SocketThread(userList.size()-1);
             }
-            
-            System.out.println("new connection made");
-
             //add new user to list and start new thread
             newUser.start();
         } // end while loop

@@ -64,17 +64,9 @@ public class ChatClient extends Thread{
         }
         //parse arguments to variables
         server = argv[0];
-        //if the first argument is not an ip address, resolve it as a hostname to an ip address
-        //ill be honest this might be a usage of 
-        if(argv[0].split(".").length!=4){
-            try {  
-                server = InetAddress.getByName(argv[0]).toString();
-            } catch (UnknownHostException e) {
-                System.out.println("ERR - arg 0");
-            }
-        }
+        
         //test if the ports are valid on the linux server
-        if(Integer.parseInt(argv[1])<11000&&Integer.parseInt(argv[1])>=10000){
+        if(Integer.parseInt(argv[1])<=11000&&Integer.parseInt(argv[1])>=10000){
             port = Integer.parseInt(argv[1]);
         } else {
             System.out.println("ERR - arg 2");
