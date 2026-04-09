@@ -49,9 +49,9 @@ public class ChatClient extends Thread{
                             userOutput.write(pingMsg.getBytes());
                             charSent += pingMsg.length();
                             chatSent ++;
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                            // the catch doesnt do anything because it really just catches socket closed errors from the socket closing. not good practice but it works so, whatever
+                        } catch (IOException e) {}
+                        // tell the client the ping has been sent
                     pingSent();
                 }
             }
@@ -224,7 +224,6 @@ public class ChatClient extends Thread{
                         break;
                     case "history":
                         payload+=msg1.substring(22,msg1.lastIndexOf(",timestamp:"));
-                        System.out.println("History");
                         break;
                     default:
                         //shouldnt ever happen but procs a funny statement if it does for troubleshooting

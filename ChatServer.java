@@ -364,9 +364,7 @@ public class ChatServer{
                                         } catch (IOException e){
                                             e.printStackTrace();
                                             break;
-                                        }
-
-                                        
+                                        }                                        
                                     }
                                     break;
                                 default:
@@ -385,7 +383,6 @@ public class ChatServer{
                         }
                         break;
                     case "ping":
-                        System.out.println("Ping " + userList.get(this.index).nickname()+ " " + userList.get(this.index).pingValue());
                         break;
                     case "disconnect":
                         //on disconnect message, send system message to all users in the room
@@ -398,7 +395,6 @@ public class ChatServer{
                         //also remove the user from their room
                         rooms.get(rooms.indexOf(new ChatRoom(userList.get(this.index).room()))).remove(this.index);
                         //also close the socket and mark userlist slot for reuse
-                        System.out.println("disconnect");
                         try{
                             userList.get(this.index).connectionSocket.close();
                         } catch (IOException e){
