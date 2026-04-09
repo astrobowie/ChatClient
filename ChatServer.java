@@ -266,7 +266,7 @@ public class ChatServer{
                                         e.printStackTrace();
                                     }
                                     //then send a system message to the people in the user's old room
-                                    String otherMoveMsg = "type:system,message:" + userList.get(this.index).nickname() + ": joined room lobby.,timestamp:" + LocalDateTime.now().format(timeFormat);
+                                    String otherMoveMsg = "type:system,message:" + userList.get(this.index).nickname() + " joined room lobby.,timestamp:" + LocalDateTime.now().format(timeFormat);
                                     messageSend(userList.get(this.index).room(),this.index,otherMoveMsg.getBytes());
                                     //then send a system message to the people in the user's new room
                                     messageSend("lobby",this.index,otherMoveMsg.getBytes());

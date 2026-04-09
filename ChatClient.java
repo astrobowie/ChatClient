@@ -12,8 +12,16 @@ public class ChatClient extends Thread{
     public static String server;
     public static int port;
     public static String room;
+    public static int numRooms = 0;
     public static String userID;
     public static String startDate;
+    public static String endDate;
+    public static int chatSent = 0;
+    public static int chatRcv = 0;
+    public static int pmRcv = 0;
+    public static int pmSent = 0;
+    public static int charSent = 0;
+    public static int charRcv = 0;
     public static long lastPing = System.currentTimeMillis();
     public static int pulseTimer=0;
     public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -39,6 +47,8 @@ public class ChatClient extends Thread{
                         try {
                             userOutput.writeInt(pingMsg.getBytes().length);
                             userOutput.write(pingMsg.getBytes());
+                            charSent += pingMsg.length();
+                            chatSent ++;
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -80,6 +90,8 @@ public class ChatClient extends Thread{
             userOutput.writeInt(userMessage.getBytes().length);
             userOutput.write(userMessage.getBytes(), 0, userMessage.getBytes().length);
         }
+        chatSent ++;
+        charSent += userMessage.length();
         room = "lobby";
 
         //set up heartbeat thread
@@ -90,15 +102,23 @@ public class ChatClient extends Thread{
         while(!leave){
             //get user message
             userMessage = userInput.readLine();
+            //check if message is a pm for pm count
+            if( userMessage.substring (0,4).equals("/msg")){
+                pmSent++;
+            }
             //checks if user message is a disconnect, send disconnect message instead
             //also get current datetime
             timeKeeper = LocalDateTime.now();
             if(userMessage.length()>=11&&userMessage.substring(0,11).equals("/disconnect")){
                 userMessage = "type:disconnect,nickname:" + nickname + ",userID:" + userID + ",timestamp:"+ timeKeeper.format(timeFormat);
+                charSent += userMessage.length();
+                chatSent ++;
                 leave = true;
             } else {
                 //otherwise, add metadata to user message and send it
                 userMessage = "type:text,room:"+ room +",nickname:" + nickname + ",userID:" + userID + ",text:" + userMessage + ",timestamp:" + timeKeeper.format(timeFormat);
+                charSent += userMessage.length();
+                chatSent ++;
             } // end if else
             //send message as length in bytes and then a series of bytes
             synchronized(lock){
@@ -109,9 +129,11 @@ public class ChatClient extends Thread{
             //tell the heartbeat timer that a message has been sent
             pingSent();
         }//end while loop
-        //on disconnect, close connection
-        System.out.println("Disconnect Successful");
-        connection.close();
+        //on disconnect, print summary and close connection
+        System.out.println("Summary: start:" + startDate + ", end:" + LocalDateTime.now().format(timeFormat)+", room:"+room+", rooms joined:" + numRooms + ", chat sent" + chatSent + ", chat rcv:"+ chatRcv + ", pm sent:" + pmSent + ", pm rcv:"+ pmRcv + ", char sent:" + charSent + "char rcv:" + charRcv);
+        try {
+            connection.close();
+        } catch (IOException e){}        
     }
 
     public void run(){
@@ -138,6 +160,8 @@ public class ChatClient extends Thread{
                 leave = true;
                 break;
             } 
+            charRcv += msg1.length();
+            chatRcv ++;
             //if the message got read properly, we gotta spend forever parsing it
             if(msg1.equals("error")!=true){
                 //start by getting type and date since those are present in all packages
@@ -177,9 +201,11 @@ public class ChatClient extends Thread{
                         //if system confirms nickname change with message starting in nick, change local nickname variable to rest of message
                         if(msg1.substring(msg1.indexOf(",message:")+9,msg1.indexOf(",message:")+9+4).equals("nick")){
                             nickname = msg1.substring(msg1.indexOf(",message:")+9+4,msg1.lastIndexOf(",timestamp:"));
+                            
                         } else {
                         if(msg1.substring(msg1.indexOf(",message:")+9,msg1.indexOf(",message:")+9+4).equals("room")){
                             room = msg1.substring(msg1.indexOf(",message:")+9+4,msg1.lastIndexOf(",timestamp:"));
+                            numRooms++;
                         } else {
                             payload += msg1.substring(msg1.indexOf(",message:")+9,msg1.lastIndexOf(",timestamp:"));
                         }}
