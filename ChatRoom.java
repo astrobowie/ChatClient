@@ -67,11 +67,12 @@ public class ChatRoom {
             //get the type and the date since those are the ones that are always importantand always in the same spot
             date = s.substring(s.lastIndexOf(",timestamp:")+11);
             fullHistory += date + " :: [" + this.name +"] ";
-            fullHistory += s.substring(s.indexOf(",nickname:")+10,s.lastIndexOf(",userID:"));
+            
             //the message always starts with "type:" so we just skip to index 5
             type = s.substring(5,s.indexOf(','));
             //if the message is of type text, get the message from text, otherwise, get it from message
             if(type.equals("text")){
+                fullHistory += s.substring(s.indexOf(",nickname:")+10,s.lastIndexOf(",userID:"));
                 addedMsg = s.substring(s.indexOf(",text:")+6,s.lastIndexOf(",timestamp:"));
             } else {
                 addedMsg = s.substring(s.indexOf(",message:")+9,s.lastIndexOf(",timestamp:"));
