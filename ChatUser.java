@@ -13,7 +13,7 @@ public class ChatUser{
     //room
     public String room = "lobby";
     //variables counting time since
-    public long lastPing = System.currentTimeMillis();
+    private long lastPing = System.currentTimeMillis();
     private int pingTimer = 0;
 
     //equals override
@@ -59,7 +59,7 @@ public class ChatUser{
     //                               that i make a thread, but its still probably better to have
     //                               one thread than 20
     //tl;dr: this is used to keep track of how long it's been since a ping
-    public synchronized int timerUpdate(){
+    public synchronized void timerUpdate(){
         //set a variable to the current time so it stays consistent
         long currTime = System.currentTimeMillis();
         //increase the ping timer to however long it's been since the last ping
@@ -67,7 +67,7 @@ public class ChatUser{
         //update the timer since the last ping
         lastPing = currTime;
         //return total time since last ping
-        return pingTimer;
+        return;
     }
     //usually this trick is used to keep track of how much time has passed between frames so that you can
     //                 make sure your processes aren't determined on how quickly the frames are rendering
@@ -92,6 +92,17 @@ public class ChatUser{
         return pingTimer;
     }
 
+    public synchronized String nickname(){
+        return nickname;
+    }
+
+    public synchronized void name(String name){
+        this.nickname = name;
+    }
+
+    public synchronized String room(){
+        return room;
+    }
 
     //constructor method
     //i should probably say something about this but for the life of me i can't figure out what

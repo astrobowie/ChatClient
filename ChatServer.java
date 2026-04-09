@@ -28,30 +28,36 @@ public class ChatServer{
             while(true){
                 //go through each user in the userList
                 for(int i = 0; i<userList.size(); i++){
-                    //if the user is valid, run the timer update. since the timer update returns the time since the last ping, 
-                    //                                                 if it returns greater than 30,000, disconnect the user
-                    if(userList.get(i).nickname.equals("")!=true&&userList.get(i).timerUpdate()>30000){
-                        System.out.println(userList.get(i).nickname + " disconnect " + userList.get(i).pingValue());
-                        //create the system message
-                        sysmsg = "type:system,message:" + userList.get(i).nickname + ": disconnected.,timestamp:" + LocalDateTime.now().format(timeFormat);
-                        try{
-                            //for every single user that isn't the timed out user, if the user is valid, output a system message for the disconnect
-                            for(int j = 0; j<userList.size(); j++){
-                                if(i!=j&&!userList.get(j).nickname.equals("")){
-                                    userList.get(j).outputToUser.writeInt(sysmsg.getBytes().length);
-                                    userList.get(j).outputToUser.write(sysmsg.getBytes());
+                    
+                    //if the user is valid, run the timer update
+                    if(userList.get(i).nickname().equals("")!=true){
+                        userList.get(i).timerUpdate();
+                        //check if user's pingvalue is greater than 30000
+                        if(userList.get(i).pingValue()>30000){
+                            System.out.println(userList.get(i).nickname() + " disconnect " + userList.get(i).pingValue());
+                            //create the system message
+                            sysmsg = "type:system,message:" + userList.get(i).nickname() + ": disconnected.,timestamp:" + LocalDateTime.now().format(timeFormat);
+                            try{
+                                //for every single user that isn't the timed out user, if the user is valid, output a system message for the disconnect
+                                for(int j = 0; j<userList.size(); j++){
+                                    if(i!=j&&!userList.get(j).nickname().equals("")){
+                                        userList.get(j).outputToUser.writeInt(sysmsg.getBytes().length);
+                                        userList.get(j).outputToUser.write(sysmsg.getBytes());
+                                    }
                                 }
+                                //then close the timed out user's connection
+                                userList.get(i).connectionSocket.close();
+                            } catch (IOException e){
+                                e.printStackTrace();
                             }
-                            //then close the timed out user's connection
-                            userList.get(i).connectionSocket.close();
-                        } catch (IOException e){
-                            e.printStackTrace();
-                        }
-                        //then mark the user as nonvalid
-                        userList.get(i).nickname = "";
-                        //then lower actual usercount
-                        userNum--;
-                    }// end if statement
+                            //then mark the user as nonvalid
+                            userList.get(i).name("");
+                            //then lower actual usercount
+                            userNum--;
+                        }// end if statement
+                    }
+                    
+                    
                 }//end for loop
                 //since the heartbeat thread will only ever be capable of blocking during the process of timing out a user, im also using it to check
                 //                                                       whether or not the userList needs to be cleaned
@@ -101,7 +107,7 @@ public class ChatServer{
                     break;
                 } // end try catch block
                 //since we have now recieved a message from the user, we will reset the user's ping timer
-                System.out.println(userList.get(this.index).pingValue());
+                System.out.println(userList.get(this.index).nickname()+" "+userList.get(this.index).pingValue());
                 userList.get(this.index).timerReset();
                 //get the type and the date since those are the ones that are always importantand always in the same spot
                 date = msg.substring(msg.lastIndexOf(",timestamp:")+11);
@@ -190,8 +196,8 @@ public class ChatServer{
                                         payload = "Error: Username already registered";
                                     } else {
                                         //if it isnt, update the nickname
-                                        userList.get(this.index).nickname = payload.substring(payload.indexOf(' ')+1,payload.length()-1);
-                                        msg = "type:system,message:nick" + userList.get(this.index).nickname + ",timestamp:" + LocalDateTime.now().format(timeFormat);
+                                        userList.get(this.index).name(payload.substring(payload.indexOf(' ')+1,payload.length()-1));
+                                        msg = "type:system,message:nick" + userList.get(this.index).nickname() + ",timestamp:" + LocalDateTime.now().format(timeFormat);
                                         try {
                                             userList.get(this.index).outputToUser.writeInt(msg.getBytes().length);
                                             userList.get(this.index).outputToUser.write(msg.getBytes());
@@ -213,7 +219,7 @@ public class ChatServer{
                                 //output messages to each user in the list
                                 for (int i = 0; i<userList.size(); i++) {
                                     //check to make sure that you dont send the message back to the user
-                                    if(i!=this.index&&userList.get(i).nickname.equals("")!=true){
+                                    if(i!=this.index&&userList.get(i).nickname().equals("")!=true){
                                         //send size for message framing, then send actual bytes
                                         userList.get(i).outputToUser.writeInt(n);
                                         userList.get(i).outputToUser.write(messageBytes, 0, n);
@@ -227,14 +233,14 @@ public class ChatServer{
                         }
                         break;
                     case "ping":
-                        System.out.println("Ping " + userList.get(this.index).nickname+ " " + userList.get(this.index).pingValue());
+                        System.out.println("Ping " + userList.get(this.index).nickname()+ " " + userList.get(this.index).pingValue());
                         break;
                     case "disconnect":
                         //on disconnect message, close the socket and mark userlist slot for reuse
                         System.out.println("disconnect");
                         try{
                             userList.get(index).connectionSocket.close();
-                            userList.get(index).nickname = "";
+                            userList.get(index).name("");
                         } catch (IOException e){
                             e.printStackTrace();
                         }
@@ -250,7 +256,7 @@ public class ChatServer{
                             userList.get(this.index).nickname = "";
                         } else {
                             //otherwise, set the new nickname
-                            userList.get(this.index).nickname = msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:"));
+                            userList.get(this.index).name(msg.substring(msg.indexOf(",nickname:")+10, msg.lastIndexOf(",userID:")));
                             System.out.println("Registered");
                             //then send ok message
                             msg = "type:ok,message:registered,room:lobby,timestamp:" + date;
@@ -280,7 +286,7 @@ public class ChatServer{
                         e.printStackTrace();
                     }
                     //set the thread to end if the error nulled the user
-                    if(userList.get(this.index).nickname.equals("")){
+                    if(userList.get(this.index).nickname().equals("")){
                         type = "disconnect";
                     }
                 }
