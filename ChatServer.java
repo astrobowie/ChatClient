@@ -434,8 +434,13 @@ public class ChatServer{
     public static void main(String argv[]) throws Exception {
         
         //get port from arguments
-        int port = Integer.parseInt(argv[0]);
-
+        int port;
+        if(Integer.parseInt(argv[0])<11000&&Integer.parseInt(argv[0])>=10000){
+            port = Integer.parseInt(argv[0]);
+        } else {
+            System.out.println("ERR - arg 1");
+            return;
+        }
         //set up welcome socket
         ServerSocket welcome = new ServerSocket(port);
 

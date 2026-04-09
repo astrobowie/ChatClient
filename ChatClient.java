@@ -12,7 +12,7 @@ public class ChatClient extends Thread{
     public static String server;
     public static int port;
     public static String room;
-    public static int numRooms = 0;
+    public static int numRooms = 1;
     public static String userID;
     public static String startDate;
     public static String endDate;
@@ -59,9 +59,28 @@ public class ChatClient extends Thread{
     } 
 
     public static void main(String argv[]) throws Exception {
+        if (argv.length!=4) {
+            System.out.println("ERR - arg " + String.valueOf(argv.length));
+        }
         //parse arguments to variables
         server = argv[0];
-        port = Integer.parseInt(argv[1]);
+        //if the first argument is not an ip address, resolve it as a hostname to an ip address
+        //ill be honest this might be a usage of 
+        if(argv[0].split(".").length!=4){
+            try {  
+                server = InetAddress.getByName(argv[0]).toString();
+            } catch (UnknownHostException e) {
+                System.out.println("ERR - arg 0");
+            }
+        }
+        //test if the ports are valid on the linux server
+        if(Integer.parseInt(argv[1])<11000&&Integer.parseInt(argv[1])>=10000){
+            port = Integer.parseInt(argv[1]);
+        } else {
+            System.out.println("ERR - arg 2");
+            return;
+        }
+        
         nickname = argv[2];
         userID = argv[3];
         
@@ -125,12 +144,11 @@ public class ChatClient extends Thread{
                 userOutput.writeInt(userMessage.getBytes().length);
                 userOutput.write(userMessage.getBytes());
             }
-            
             //tell the heartbeat timer that a message has been sent
             pingSent();
         }//end while loop
         //on disconnect, print summary and close connection
-        System.out.println("Summary: start:" + startDate + ", end:" + LocalDateTime.now().format(timeFormat)+", room:"+room+", rooms joined:" + numRooms + ", chat sent" + chatSent + ", chat rcv:"+ chatRcv + ", pm sent:" + pmSent + ", pm rcv:"+ pmRcv + ", char sent:" + charSent + "char rcv:" + charRcv);
+        System.out.println("Summary: start:" + startDate + ", end:" + LocalDateTime.now().format(timeFormat)+", room:"+room+", rooms joined:" + numRooms + ", chat sent:" + chatSent + ", chat rcv:"+ chatRcv + ", pm sent:" + pmSent + ", pm rcv:"+ pmRcv + ", char sent:" + charSent + " char rcv:" + charRcv);
         try {
             connection.close();
         } catch (IOException e){}        
@@ -155,8 +173,7 @@ public class ChatClient extends Thread{
                 msg1 = new String(messageBytes, StandardCharsets.UTF_8);
                 //output to user
             } catch (IOException e) {
-                //print exception and then exit loop so that the thread doesnt nuke my terminal with error messages
-                e.printStackTrace();
+                //exit loop so that the thread doesnt nuke my terminal with error messages
                 leave = true;
                 break;
             } 
@@ -198,11 +215,14 @@ public class ChatClient extends Thread{
                         payload += msg1.substring(msg1.indexOf(",text:")+6, msg1.lastIndexOf(",timestamp:"));
                         break;
                     case "system":
+                        //add system signifier
+                        payload += "* ";
                         //if system confirms nickname change with message starting in nick, change local nickname variable to rest of message
                         if(msg1.substring(msg1.indexOf(",message:")+9,msg1.indexOf(",message:")+9+4).equals("nick")){
                             nickname = msg1.substring(msg1.indexOf(",message:")+9+4,msg1.lastIndexOf(",timestamp:"));
                             
                         } else {
+                            //if system confirms room change, change the room variable for the client, increase number of rooms visited
                         if(msg1.substring(msg1.indexOf(",message:")+9,msg1.indexOf(",message:")+9+4).equals("room")){
                             room = msg1.substring(msg1.indexOf(",message:")+9+4,msg1.lastIndexOf(",timestamp:"));
                             numRooms++;
