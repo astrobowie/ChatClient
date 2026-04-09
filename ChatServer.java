@@ -31,7 +31,7 @@ public class ChatServer{
                     //if the user is valid, run the timer update. since the timer update returns the time since the last ping, 
                     //                                                 if it returns greater than 30,000, disconnect the user
                     if(userList.get(i).nickname.equals("")!=true&&userList.get(i).timerUpdate()>30000){
-                        System.out.println(userList.get(i).nickname + " disconnect " + userList.get(i).pingTimer);
+                        System.out.println(userList.get(i).nickname + " disconnect " + userList.get(i).pingValue());
                         //create the system message
                         sysmsg = "type:system,message:" + userList.get(i).nickname + ": disconnected.,timestamp:" + LocalDateTime.now().format(timeFormat);
                         try{
@@ -101,8 +101,8 @@ public class ChatServer{
                     break;
                 } // end try catch block
                 //since we have now recieved a message from the user, we will reset the user's ping timer
-                System.out.println(userList.get(this.index).pingTimer);
-                userList.get(this.index).pingTimer=0;
+                System.out.println(userList.get(this.index).pingValue());
+                userList.get(this.index).timerReset();
                 //get the type and the date since those are the ones that are always importantand always in the same spot
                 date = msg.substring(msg.lastIndexOf(",timestamp:")+11);
                 //the message always starts with "type:" so we just skip to index 5
@@ -227,7 +227,7 @@ public class ChatServer{
                         }
                         break;
                     case "ping":
-                        System.out.println("Ping " + userList.get(this.index).nickname+ " " + userList.get(this.index).pingTimer);
+                        System.out.println("Ping " + userList.get(this.index).nickname+ " " + userList.get(this.index).pingValue());
                         break;
                     case "disconnect":
                         //on disconnect message, close the socket and mark userlist slot for reuse

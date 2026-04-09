@@ -14,7 +14,7 @@ public class ChatUser{
     public String room = "lobby";
     //variables counting time since
     public long lastPing = System.currentTimeMillis();
-    public int pingTimer = 0;
+    private int pingTimer = 0;
 
     //equals override
     @Override
@@ -59,7 +59,7 @@ public class ChatUser{
     //                               that i make a thread, but its still probably better to have
     //                               one thread than 20
     //tl;dr: this is used to keep track of how long it's been since a ping
-    public int timerUpdate(){
+    public synchronized int timerUpdate(){
         //set a variable to the current time so it stays consistent
         long currTime = System.currentTimeMillis();
         //increase the ping timer to however long it's been since the last ping
@@ -81,6 +81,17 @@ public class ChatUser{
     //                                trees done
     //what they dont tell you about adhd is that it gives a flat debuff to your ability to implement best
     //                                practice while coding
+
+    //properly synchronize timer reset
+    public synchronized void timerReset(){
+        pingTimer = 0;
+        lastPing = System.currentTimeMillis();
+    }
+
+    public synchronized int pingValue(){
+        return pingTimer;
+    }
+
 
     //constructor method
     //i should probably say something about this but for the life of me i can't figure out what
