@@ -203,6 +203,16 @@ public class ChatServer{
                                             //if i were building this from the ground up to my own specifications i would probably make this look cleaner
                                             //as it stands the need to match both the specifications and make it work on what i've already build is kinda killing this
                                             //thats fine though i guess
+                                            //anyway now you do the history
+                                            //get the history from the room
+                                            String historyString = rooms.get(rooms.indexOf(new ChatRoom(roomTarget))).historyGet() + ",timestamp:" + LocalDateTime.now().format(timeFormat);
+                                            try {
+                                                //frame and send the history
+                                                userList.get(this.index).outputToUser.writeInt(historyString.getBytes().length);
+                                                userList.get(this.index).outputToUser.write(historyString.getBytes());
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
                                         } else {
                                             type="error";
                                             payload = "Error: Invalid arguments!";

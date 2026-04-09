@@ -185,6 +185,7 @@ public class ChatClient extends Thread{
                         }}
                         break;
                     case "history":
+                        payload+=msg1.substring(22,msg1.lastIndexOf(",timestamp:"));
                         System.out.println("History");
                         break;
                     default:
